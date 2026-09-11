@@ -195,3 +195,44 @@ class RebalancePlan(BaseModel):
     violations_before: list[str] = Field(default_factory=list)
     violations_after: list[str] = Field(default_factory=list)
     resolved: bool
+
+
+# ---------------------------------------------------------------- history
+HistoryBasis = Literal["quota_month_end", "close_month_end", "reported_monthly_return",
+                       "compounded_daily_rate", "published_monthly_rate"]
+
+
+class HistoryPoint(BaseModel):
+    """One month of one series. `index` is base 100 at the series' first month."""
+    month: str                          # YYYY-MM
+    date: str                           # the published observation date
+    price: Optional[float] = None       # absent for return-only sources
+    return_pct: Optional[float] = None  # month over month
+    index: float
+
+
+class HistorySeries(BaseModel):
+    instrument_id: str
+    display_name: str
+    kind: Literal["position", "benchmark"]
+    basis: HistoryBasis
+    source: str
+    months_covered: int
+    first_month: str
+    last_month: str
+    total_return_pct: float             # over the covered window, not the requested one
+    complete: bool                      # covers every month the window asked for
+    gap_note: str = ""
+    points: list[HistoryPoint]
+
+
+class HistoryPack(BaseModel):
+    """Monthly trajectory of the positions. Constant quantities by assumption."""
+    client_id: str
+    window_start: str
+    window_end: str
+    months_requested: int
+    assumption: str
+    series: list[HistorySeries]
+    excluded: list[dict]                # position -> why it has no series
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
