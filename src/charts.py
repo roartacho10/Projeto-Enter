@@ -147,6 +147,121 @@ def contribution_chart(pack: MetricsPack, ins: pd.DataFrame) -> tuple[Path, list
     return p, idle
 
 
+def trajectory_chart(hist: dict) -> Path | None:
+    """
+    Ten positions is far past the point where colour can carry identity, so it
+    does not try: one small panel per position, the name above it, a single ink
+    line inside. The CDI sits in every panel as a dashed grey reference, which
+    is the comparison an advisor actually makes.
+
+    Every panel spans the whole window even when the series does not. A holding
+    with six months of published history draws a short line on a wide axis, and
+    the empty stretch is the honest reading - far better than a line pulled
+    across months nobody published. The coverage is also written out, because a
+    reader should not have to infer it from the shape.
+    """
+    months = [d.strftime("%Y-%m") for d in
+              pd.period_range(hist["window_start"], hist["window_end"], freq="M").to_timestamp()]
+    xof = {m: i for i, m in enumerate(months)}
+    pos = [s for s in hist["series"] if s["kind"] == "position"]
+    if not pos:
+        return None
+    pos.sort(key=lambda s: -s["total_return_pct"])
+    cdi = next((s for s in hist["series"] if s["instrument_id"] == "MACRO_CDI"), None)
+
+    ncol = 3
+    nrow = -(-len(pos) // ncol)
+    fig, axes = plt.subplots(nrow, ncol, figsize=(6.6, 1.34 * nrow + 0.30), dpi=200,
+                             sharex=True, sharey=False, squeeze=False)
+    axes = axes.ravel()
+
+    # One holding ran +232% while the funds moved 25-30%. On a shared axis that
+    # single series flattens every other panel into a straight line, so each
+    # panel gets its own vertical scale - and MIN_SPAN stops the reverse error,
+    # where a fund oscillating one percent is drawn as a mountain range.
+    MIN_SPAN = 25.0
+
+    def ref(series) -> list[tuple[int, float]]:
+        """
+        The CDI restricted to the months this holding actually covers, and
+        rebased to 100 at its first one. Drawing the full-window CDI next to a
+        six-month series would compare two different periods - the reader would
+        see the Brave FIDC "losing" to a CDI measured over nineteen months it
+        was never in.
+        """
+        if not cdi:
+            return []
+        span = {pt["month"] for pt in series["points"]}
+        pts = [pt for pt in cdi["points"] if pt["month"] in span]
+        if len(pts) < 2:
+            return []
+        base = pts[0]["index"]
+        return [(xof[pt["month"]], pt["index"] / base * 100) for pt in pts]
+
+    def limits(series) -> tuple[float, float]:
+        vals = [pt["index"] for pt in series["points"]] + [100.0]
+        vals += [v for _, v in ref(series)]
+        lo_, hi_ = min(vals), max(vals)
+        if hi_ - lo_ < MIN_SPAN:
+            mid = (hi_ + lo_) / 2
+            lo_, hi_ = mid - MIN_SPAN / 2, mid + MIN_SPAN / 2
+        pad_ = (hi_ - lo_) * 0.20
+        return lo_ - pad_, hi_ + pad_
+
+    for i, (ax, s) in enumerate(zip(axes, pos)):
+        r = ref(s)
+        if r:
+            ax.plot([x for x, _ in r], [v for _, v in r],
+                    color=RULE, lw=1.0, ls=(0, (3, 2)), zorder=1)
+        xs = [xof[p["month"]] for p in s["points"]]
+        ys = [p["index"] for p in s["points"]]
+        ax.plot(xs, ys, color=INK, lw=1.3, zorder=3,
+                marker="o" if len(xs) < 7 else None, ms=2.0)
+        ax.axhline(100, color="#ECECEC", lw=0.7, zorder=0)
+        ax.set_title(s["display_name"][:27], fontsize=7.2, loc="left", pad=4)
+        cov = "" if s["complete"] else f"{s['months_covered']}/{len(months)} meses"
+        if cov:
+            ax.text(1.0, 1.03, cov, transform=ax.transAxes, ha="right", va="bottom",
+                    fontsize=6.2, color=MUTED)
+        ylo, yhi = limits(s)
+        ax.set_ylim(ylo, yhi)
+        # Park the figure wherever the line is not: high if the series ends low,
+        # low if it ends high. A label under the last point is unreadable.
+        ends_high = (ys[-1] - ylo) / (yhi - ylo) > 0.5
+        ax.text(0.98, 0.06 if ends_high else 0.80,
+                ("+" if s["total_return_pct"] >= 0 else "")
+                + brnum(s["total_return_pct"], 1) + "%",
+                transform=ax.transAxes, ha="right", va="bottom",
+                fontsize=7.4, fontweight="bold", color=INK,
+                bbox=dict(boxstyle="square,pad=0.22", fc="white", ec="none"))
+        frame(ax)
+        ax.set_yticks([])
+
+    for ax in axes[len(pos):]:
+        ax.set_visible(False)
+
+    axes[0].set_xlim(-0.6, len(months) - 0.4)
+    ticks = sorted({0, len(months) // 2, len(months) - 1})
+    labels = [months[t] for t in ticks]
+    # sharex hides labels off the bottom row; put them back on the last panel
+    # actually drawn in each column, otherwise most panels lose their axis.
+    for col in range(ncol):
+        last = max((i for i in range(len(pos)) if i % ncol == col), default=None)
+        if last is None:
+            continue
+        axes[last].tick_params(labelbottom=True)
+        axes[last].set_xticks(ticks)
+        axes[last].set_xticklabels(labels, fontsize=6.2)
+
+    fig.suptitle("Base 100 no primeiro mês de cada série · tracejado: CDI no mesmo período · "
+                 "escala vertical própria em cada painel",
+                 fontsize=6.6, color=MUTED, y=0.997, x=0.010, ha="left")
+    fig.tight_layout(pad=0.35, h_pad=1.5, w_pad=1.0, rect=(0, 0, 1, 0.975))
+    p_ = CHARTS / "trajectory.svg"
+    fig.savefig(p_, format="svg", transparent=True); plt.close(fig)
+    return p_
+
+
 if __name__ == "__main__":
     pack = MetricsPack.model_validate_json((OUT / "metrics_pack.json").read_text(encoding="utf-8"))
     ins = pd.read_csv(REF / "instruments.csv", dtype=str).fillna("").set_index("instrument_id")
@@ -155,3 +270,10 @@ if __name__ == "__main__":
     p, idle = contribution_chart(pack, ins)
     print("ok", p)
     print("   sem contribuicao:", ", ".join(idle) or "nenhuma")
+    hp = OUT / "history.json"
+    if hp.exists():
+        import json
+        t = trajectory_chart(json.loads(hp.read_text(encoding="utf-8")))
+        print("ok", t) if t else print("   sem trajetoria para desenhar")
+    else:
+        print("   (sem history.json: rode src/history.py para o grafico de trajetoria)")
