@@ -43,14 +43,17 @@ st.set_page_config(page_title="Relatórios mensais · XP", page_icon="📄", lay
 
 st.markdown("""
 <style>
-  /* Hide the chrome, NOT the header: the control that re-opens a collapsed
-     sidebar lives inside it, so hiding the header traps the user with no way
-     back to the settings. Toolbar and menu go; the collapse control stays. */
+  /* Chrome removal, measured in a real browser rather than guessed.
+     stHeader is a 60px opaque strip: made transparent and zero-height, or it
+     reads as a white band above the page. The toolbar inside it is hidden -
+     but stExpandSidebarButton, the control that brings a collapsed sidebar
+     back, is a CHILD of that toolbar and inherits the hidden visibility. Two
+     earlier attempts failed exactly there, so it is un-hidden explicitly. */
   #MainMenu, footer {visibility: hidden;}
+  [data-testid="stHeader"] {background: transparent; height: 0; min-height: 0;}
   [data-testid="stToolbar"] {visibility: hidden; height: 0;}
-  [data-testid="stDecoration"] {display: none;}
-  [data-testid="stSidebarCollapseButton"],
-  [data-testid="stSidebarCollapsedControl"] {visibility: visible !important;}
+  [data-testid="stExpandSidebarButton"],
+  [data-testid="stExpandSidebarButton"] * {visibility: visible !important;}
   .block-container {padding-top: 1.2rem; max-width: 1150px;}
   .band {background:#231F20; margin:0 0 1.4rem; padding:1.1rem 1.6rem; border-radius:6px;
          display:flex; align-items:center; justify-content:space-between;}
