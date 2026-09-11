@@ -27,10 +27,12 @@ SRC = ROOT / "src"
 # "shared" stages price the whole universe once, not once per client
 STAGES = [
     ("fetch_market",    "Baixa preços e séries macro",     {"fetch", "shared"}),
+    ("fetch_history",   "Baixa 24 meses de histórico",     {"fetch", "shared"}),
     ("build_prices",    "Monta a tabela de preços",        {"shared"}),
     ("compute_metrics", "Calcula o MetricsPack",           set()),
     ("recommend",       "Aplica as regras de suitability", set()),
     ("rebalance",       "Dimensiona compras e vendas",     set()),
+    ("history",         "Monta a trajetória mensal",       set()),
     ("figures",         "Publica a folha de cifras",       set()),
     ("generate_letter", "Escreve e verifica a carta",      {"llm"}),
     ("charts",          "Desenha os gráficos",             set()),
