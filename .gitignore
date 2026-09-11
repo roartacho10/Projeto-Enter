@@ -1,0 +1,20 @@
+# Bulk CVM downloads (~230 MB). Regenerate with the downloader, or rely on the
+# versioned extract in data/raw/cvm_extract/, which is what the pipeline reads
+# when these are absent.
+CSVs exportados CVM/
+data/raw/cvm/
+
+# Generated on every run
+output/
+data/processed/
+__pycache__/
+*.pyc
+
+# Never commit credentials
+.env
+.streamlit/secrets.toml
+
+# Local scratch
+Claude outputs/
+.DS_Store
+Thumbs.db

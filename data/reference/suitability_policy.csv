@@ -1,0 +1,6 @@
+rule_id,rule_type,threshold,severity,rationale,policy_source
+MAX_IDLE_CASH_PCT,idle_capital,5.0,warning,"Perfil moderado com horizonte medio-longo: caixa parado corroi poder de compra, objetivo declarado do cliente.",Perfil de Risco - secao 1 (preservar e incrementar poder de compra)
+NO_MATURED_HOLDINGS,matured_instrument,0,warning,Papel vencido nao remunera e deveria ter sido reinvestido no vencimento.,Boa pratica operacional
+MAX_EQUITY_LOOKTHROUGH_PCT,equity_lookthrough,25.0,warning,"Exposicao a renda variavel acima do que um mandato moderado comporta, contando fundos de acoes e long biased.",Perfil de Risco - secao 1 (equilibrio entre seguranca e retorno)
+MAX_SINGLE_POSITION_PCT,concentration,15.0,warning,Concentracao excessiva em um unico instrumento contraria a estrategia de diversificacao recomendada.,Perfil de Risco - secao 3 (estrategia de diversificacao)
+RESTRICTED_CATEGORY_FIDC,restricted_category,fidc,warning,FIDC tem risco de credito e liquidez distintos do que o perfil especifica para renda fixa.,Perfil de Risco - secao 2b (renda fixa BB+ ou superior)

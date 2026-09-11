@@ -1,0 +1,11 @@
+file,instrument_id,symbol,source_url,rows,retrieved_at
+LREN3_2025-03-15_2025-05-06.csv,LREN3,LREN3.SA,yfinance:LREN3.SA,33,2026-09-10T22:10:20+00:00
+MRFG3_2025-03-15_2025-05-06.csv,MRFG3,MBRF3.SA,yfinance:MBRF3.SA,33,2026-09-10T22:10:20+00:00
+AZZA3_2025-03-15_2025-05-06.csv,AZZA3,AZZA3.SA,yfinance:AZZA3.SA,33,2026-09-10T22:10:20+00:00
+HAPV3_2025-03-15_2025-05-06.csv,HAPV3,HAPV3.SA,yfinance:HAPV3.SA,33,2026-09-10T22:10:20+00:00
+IBOV_2025-03-15_2025-05-06.csv,IBOV,^BVSP,yfinance:^BVSP,33,2026-09-10T22:10:20+00:00
+AZZA3_debut_merger_check.csv,AZZA3_debut,AZZA3.SA,yfinance:AZZA3.SA,23,2026-09-10T22:10:20+00:00
+sgs_12_CDI_diario_pct.csv,CDI_diario_pct,SGS:12,https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?formato=json&dataInicial=01%2F01%2F2024&dataFinal=31%2F05%2F2025,355,2026-09-10T22:10:20+00:00
+sgs_11_Selic_diaria_pct.csv,Selic_diaria_pct,SGS:11,https://api.bcb.gov.br/dados/serie/bcdata.sgs.11/dados?formato=json&dataInicial=01%2F01%2F2024&dataFinal=31%2F05%2F2025,355,2026-09-10T22:10:20+00:00
+sgs_432_Selic_meta_aa.csv,Selic_meta_aa,SGS:432,https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json&dataInicial=01%2F01%2F2024&dataFinal=31%2F05%2F2025,517,2026-09-10T22:10:20+00:00
+sgs_433_IPCA_mensal_pct.csv,IPCA_mensal_pct,SGS:433,https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados?formato=json&dataInicial=01%2F01%2F2024&dataFinal=31%2F05%2F2025,17,2026-09-10T22:10:20+00:00

@@ -1,0 +1,10 @@
+figure_id,label,value,source_section,note
+pib_2025,PIB 2025 (var. real),"2,0%",Projecoes XP / secao Atividade,"Contra 3,6% em 2024"
+pib_2026,PIB 2026 (var. real),"1,0%",Projecoes XP / secao Atividade,
+ipca_2025,IPCA 2025,"6,1%",Projecoes XP / secao Inflacao,Acima do teto da meta
+ipca_2026,IPCA 2026,"4,5%",Projecoes XP / secao Inflacao,No limite superior da banda
+selic_2025,Selic fim de 2025,"15,50%",Projecoes XP / secao Politica Monetaria,"Taxa terminal, com altas de 1,00-0,75-0,50 p.p. nas tres reunioes seguintes"
+selic_2026,Selic fim de 2026,"12,50%",Projecoes XP / secao Politica Monetaria,
+cambio_2025,Cambio fim de 2025,"6,20",Projecoes XP / secao Setor Externo,R$/US$
+desemprego_2025,Desemprego fim de 2025,"7,0%",Projecoes XP / secao Atividade,"Contra 6,5% em 2024"
+divida_bruta_2025,Divida bruta (DBGG) 2025,"79,9%","Texto, secao Contas Publicas","DIVERGENCIA NA FONTE: a tabela de projecoes traz 80,3% e o texto 79,9%. Adotado o texto."

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>{{ doc.title }}</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: Arial, Helvetica, "Liberation Sans", sans-serif;
+    color: #1A1A1A; font-size: 9.2pt; line-height: 1.45;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .page { width: 210mm; height: 297mm; padding: 0 18mm 11mm; position: relative;
+          overflow: hidden; page-break-after: always; }
+  /* Auto-fit: the renderer measures the page and steps this down within declared
+     bounds rather than letting prose length decide whether the layout survives. */
+  .fit { zoom: var(--fit, 1); }
+  .page:last-child { page-break-after: auto; }
+
+  /* ---- header, mirroring the XP research note ---- */
+  .kicker { display: flex; justify-content: flex-end; align-items: baseline; gap: 6px;
+            font-size: 8.4pt; padding: 6mm 0 2.5mm; }
+  .kicker b { font-weight: 700; }
+  .kicker span { color: #8A8A8A; }
+  .band { background: #231F20; color: #fff; margin: 0 -18mm; padding: 4.5mm 18mm 5mm;
+          position: relative; }
+  .band .eyebrow { color: #FFC700; font-size: 13pt; font-weight: 400; margin: 0 0 2mm; }
+  .band h1 { font-size: 16pt; font-weight: 400; line-height: 1.25; margin: 0; max-width: 145mm; }
+  .band .sub { font-size: 10.5pt; color: #D8D8D8; margin: 2mm 0 0; }
+  .logo { position: absolute; right: 18mm; top: 50%; transform: translateY(-50%);
+          width: 15mm; height: auto; display: block; }
+  .logo.dark { position: static; margin-left: auto; width: 13mm; }
+  .byline { padding: 3mm 0 0; }
+  .byline b { font-size: 10pt; }
+  .byline i { display: block; color: #4A4A4A; font-size: 8.6pt; }
+
+  /* ---- key takeaways ---- */
+  .highlights { background: #FDF3D0; border-left: 3px solid #FFC700;
+                padding: 3mm 4.5mm 2.4mm; margin: 3mm 0 3mm; }
+  .highlights p { margin: 0 0 2.4mm; font-style: italic; font-size: 8.8pt; line-height: 1.4; }
+  .highlights p:last-child { margin-bottom: 0; }
+
+  p.body { text-align: justify; margin: 0 0 2.8mm; }
+  p.body .lead { font-weight: 700; }
+  h2 { font-size: 10pt; margin: 3mm 0 2mm; padding-bottom: 1mm;
+       border-bottom: 1px solid #D9D9D9; }
+
+  /* ---- summary table ---- */
+  table.kpi { width: 100%; border-collapse: collapse; margin: 1mm 0 2mm; font-size: 8.8pt; }
+  table.kpi th { text-align: left; font-weight: 700; padding: 1.6mm 2mm;
+                 border-bottom: 1.2px solid #1A1A1A; }
+  table.kpi td { padding: 1.25mm 2mm; border-bottom: 1px solid #EDEDED; }
+  table.kpi td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  table.kpi tr.total td { font-weight: 700; border-top: 1.2px solid #1A1A1A;
+                          border-bottom: none; }
+
+  /* ---- figures ---- */
+  figure { margin: 1.5mm 0 2.5mm; border: 1px solid #D9D9D9; padding: 2mm 2.5mm 1.5mm; }
+  figure figcaption { text-align: center; margin-bottom: 1mm; }
+  figure .ftitle { font-weight: 700; font-size: 9pt; display: block; }
+  figure .fsource { color: #6B6B6B; font-size: 7.6pt; display: block; }
+  figure svg { width: 100%; height: auto; display: block; }
+
+  .kpinote { color: #6B6B6B; font-size: 7.6pt; margin: -1mm 0 2mm 2mm; }
+  .poswrap { display: flex; gap: 6mm; }
+  table.trades { font-size: 8.3pt; margin-top: 2mm; }
+  table.trades td { padding: 1.1mm 2mm; }
+  table.trades td.acao { font-weight: 700; white-space: nowrap; }
+  table.pos { font-size: 7.8pt; }
+  table.pos td { padding: 0.8mm 1.5mm; }
+  table.pos th { padding: 1.2mm 1.5mm; }
+  .signoff { margin-top: 4mm; }
+  .disclaimer { position: absolute; left: 18mm; right: 18mm; bottom: 8mm;
+                border-top: 1px solid #D9D9D9; padding-top: 2mm;
+                color: #6B6B6B; font-size: 6.9pt; line-height: 1.35; text-align: justify; }
+</style></head><body style="--fit: {{ doc.fit }}">
+
+<section class="page"><div class="fit">
+  <div class="kicker"><b>{{ doc.kicker }}</b> | <b>{{ doc.period_label }}</b>
+       <span>{{ doc.year }}</span></div>
+  <div class="band">
+    <p class="eyebrow">{{ doc.brand }}</p>
+    <h1>{{ doc.title }}</h1>
+    <p class="sub">{{ doc.subtitle }}</p>
+    <img class="logo" src="{{ assets.logo_white }}" alt="XP Investimentos">
+  </div>
+  <div class="byline"><b>{{ doc.advisor }}</b><i>{{ doc.advisor_role }}</i></div>
+
+  <div class="highlights">
+    {% for h in letter.highlights %}<p>{{ h }}</p>{% endfor %}
+  </div>
+
+  <p class="body">{{ letter.greeting }}</p>
+  <h2>Desempenho da carteira</h2>
+  <p class="body">{{ letter.performance }}</p>
+
+  <table class="kpi">
+    <tr><th>Resumo do período</th><th class="n">{{ doc.date_start }}</th>
+        <th class="n">{{ doc.date_end }}</th><th class="n">Variação</th></tr>
+    {% for r in kpi_rows %}
+    <tr{% if r.total %} class="total"{% endif %}>
+      <td>{{ r.label }}</td><td class="n">{{ r.a }}</td>
+      <td class="n">{{ r.b }}</td><td class="n">{{ r.d }}</td></tr>
+    {% endfor %}
+  </table>
+  <p class="kpinote">{{ doc.kpi_note }}</p>
+
+  <figure>
+    <figcaption><span class="ftitle">Contribuição de cada posição para o resultado do mês</span>
+      <span class="fsource">Em pontos percentuais do patrimônio. {{ doc.idle_note }} Fonte: CVM, B3, cálculo próprio</span>
+    </figcaption>{{ charts.contribution }}</figure>
+</div></section>
+
+<section class="page"><div class="fit">
+  <div class="kicker"><img class="logo dark" src="{{ assets.logo }}" alt="XP Investimentos"></div>
+  <h2>Cenário macroeconômico</h2>
+  <p class="body">{{ letter.macro }}</p>
+
+  <figure>
+    <figcaption><span class="ftitle">Composição da carteira ao fim do período</span>
+      <span class="fsource">Valores marcados a mercado em {{ doc.date_end }}. Fonte: CVM, B3, cálculo próprio</span>
+    </figcaption>{{ charts.allocation }}</figure>
+
+  <h2>Recomendações</h2>
+  {% for para in letter.recommendations %}<p class="body">{{ para }}</p>{% endfor %}
+
+  {% if trade_rows %}
+  <table class="kpi trades">
+    <tr><th>Operação</th><th>Ativo ou destino</th><th class="n">Valor</th></tr>
+    {% for t in trade_rows %}
+    <tr><td class="acao">{{ t.acao }}</td><td>{{ t.alvo }}</td>
+        <td class="n">{{ t.valor }}</td></tr>
+    {% endfor %}
+  </table>
+  <p class="kpinote">{{ plan_note }}</p>
+  {% endif %}
+
+  <p class="body">{{ letter.coverage }}</p>
+  <p class="body signoff">{{ letter.closing }}</p>
+  <p class="body"><b>{{ doc.advisor }}</b><br>{{ doc.advisor_role }}</p>
+
+  {% if show_annex %}
+  <h2>Detalhamento das posições em {{ doc.date_end }}</h2>
+  <div class="poswrap">
+    {% for col in pos_cols %}
+    <table class="kpi pos">
+      <tr><th>Posição</th><th class="n">Valor</th><th class="n">%</th><th class="n">Mês</th></tr>
+      {% for r in col %}
+      <tr><td>{{ r.name }}</td><td class="n">{{ r.value }}</td>
+          <td class="n">{{ r.weight }}</td><td class="n">{{ r.ret }}</td></tr>
+      {% endfor %}
+    </table>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="disclaimer">
+    Documento gerado automaticamente por sistema em fase de prova de conceito, a partir de dados
+    públicos da CVM e do Banco Central e de posições informadas em extrato. Cobertura de marcação a
+    mercado de {{ figures.cobertura_marcacao }} da carteira investida; posições não marcadas mantêm
+    o último valor informado. Rentabilidade passada não representa garantia de resultado futuro e
+    os valores apresentados não são líquidos de impostos. Este material não constitui oferta,
+    recomendação individualizada ou análise de valores mobiliários nos termos da Resolução CVM nº
+    20/2021. Execução {{ doc.run_id }}.
+  </div>
+</div></section>
+</body></html>

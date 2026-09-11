@@ -1,0 +1,114 @@
+"""
+The figure sheet: every number the letter is allowed to contain, already
+formatted as the exact string it must appear as.
+
+This is the mechanism behind "the model never produces a number". The prompt
+receives these strings and is told to quote them verbatim; verification is
+then an exact string membership test rather than a fuzzy numeric comparison,
+which is what makes the check hard to fool.
+
+Run: python src/figures.py
+"""
+from __future__ import annotations
+from pathlib import Path
+import json
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from contracts import MetricsPack, RecommendationSet  # noqa: E402
+
+from context import OUT, REF  # noqa: E402
+
+
+def money(v: float) -> str:
+    s = f"{v:,.2f}".replace(",", "\x00").replace(".", ",").replace("\x00", ".")
+    return f"R$ {s}"
+
+
+def pct(v: float) -> str:
+    return f"{v:.2f}".replace(".", ",") + "%"
+
+
+def pp(v: float) -> str:
+    return f"{v:+.2f}".replace(".", ",") + " p.p."
+
+
+def build() -> dict[str, str]:
+    import csv as _csv
+    pack = MetricsPack.model_validate_json((OUT / "metrics_pack.json").read_text(encoding="utf-8"))
+    f: dict[str, str] = {
+        "patrimonio_inicio": money(pack.total_value_start),
+        "patrimonio_fim": money(pack.total_value_end),
+        "retorno_patrimonio": pct(pack.total_return_pct),
+        "investido_inicio": money(pack.invested_value_start),
+        "investido_fim": money(pack.invested_value_end),
+        "retorno_investido": pct(pack.invested_return_pct),
+        "caixa_valor": money(pack.cash_value),
+        "caixa_pct": pct(pack.cash_pct_of_total),
+        "benchmark_retorno": pct(pack.benchmark_return_pct),
+        "excesso_sobre_benchmark": pp(pack.excess_return_pp),
+        "cdi_mes": pct(pack.cdi_return_pct),
+        "ibovespa_mes": pct(pack.ibov_return_pct),
+        "cobertura_marcacao": pct(pack.coverage_pct),
+    }
+    for m in pack.positions:
+        f[f"retorno_{m.instrument_id}"] = pct(m.return_pct)
+        f[f"valor_{m.instrument_id}"] = money(m.value_end)
+        f[f"peso_{m.instrument_id}"] = pct(m.weight_pct)
+        f[f"contrib_{m.instrument_id}"] = pp(m.contribution_pp)
+    rp = OUT / "recommendations.json"
+    if rp.exists():
+        rs = RecommendationSet.model_validate_json(rp.read_text(encoding="utf-8"))
+        f["exposicao_rv_lookthrough"] = pct(rs.equity_lookthrough_pct)
+        f["exposicao_rv_reportada"] = pct(rs.equity_reported_pct)
+        f["capital_ocioso_valor"] = money(rs.idle_capital_brl)
+        f["capital_ocioso_pct"] = pct(rs.idle_capital_pct)
+        # Figures measured by the rule engine. Without these the model,
+        # blocked from quoting them, reaches for the nearest authorised number
+        # and silently swaps the denominator.
+        for r in rs.recommendations:
+            tag = f"{r.rule_id}_{r.instrument_id or 'geral'}"
+            if r.amount_brl is not None:
+                f[f"valor_regra_{tag}"] = money(r.amount_brl)
+            if r.observed_pct is not None:
+                f[f"pct_medido_{tag}"] = pct(r.observed_pct)   # base varies per rule; the rule text states it
+    # Trades carry amounts the letter must be able to quote verbatim.
+    rb = OUT / "rebalance_plan.json"
+    if rb.exists():
+        from contracts import RebalancePlan
+        plan = RebalancePlan.model_validate_json(rb.read_text(encoding="utf-8"))
+        f["rebalance_recursos_liberados"] = money(plan.proceeds_brl)
+        f["rebalance_valor_a_aplicar"] = money(plan.deployable_brl)
+        f["rebalance_caixa_final"] = money(plan.cash_after_brl)
+        for i, t in enumerate(plan.trades, 1):
+            tag = t.instrument_id or "destino"
+            f[f"trade_{i}_{t.action}_{tag}"] = money(t.amount_brl)
+
+    # Curated macro projections. Table figures do not survive PDF-to-text
+    # extraction intact, so these nine are read and checked by a human and
+    # carry the section of the report they come from.
+    mp = REF / "macro_figures.csv"
+    if mp.exists():
+        for row in _csv.DictReader(mp.open(encoding="utf-8")):
+            f[f"macro_{row['figure_id']}"] = row["value"]
+
+    # Policy limits are declared numbers too: without them the letter can only
+    # say "above the recommended limit", which tells the client less.
+    pp_ = REF / "suitability_policy.csv"
+    if pp_.exists():
+        for row in _csv.DictReader(pp_.open(encoding="utf-8")):
+            t = row["threshold"]
+            try:
+                f[f"limite_{row['rule_id']}"] = pct(float(t))
+            except ValueError:
+                pass
+    return f
+
+
+if __name__ == "__main__":
+    fig = build()
+    (OUT / "figures.json").write_text(json.dumps(fig, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"{len(fig)} cifras autorizadas -> {OUT / 'figures.json'}\n")
+    for k, v in list(fig.items())[:16]:
+        print(f"  {k:34} {v}")
+    print("  ...")

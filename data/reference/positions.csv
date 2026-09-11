@@ -1,0 +1,37 @@
+client_id,instrument_id,quantity,quantity_basis,avg_price,statement_value,statement_value_date,alloc_pct_statement,note
+ALBERT,LREN3,1642,statement_qty,29.05,27812.04,2025-05-07,8.91,
+ALBERT,MRFG3,1504,statement_qty,7.15,15432.89,2025-05-07,4.94,
+ALBERT,AZZA3,193,statement_qty,82.06,10923.72,2025-05-07,3.50,"Preco do extrato (56,58) e pre-fusao ago/2024. Qtd 1:1 em AZZA3 - CONFIRMAR relacao de troca."
+ALBERT,HAPV3,1547,statement_qty,3.97,6143.14,2025-05-07,1.97,
+ALBERT,FUND_RIZA_LOTUS,,derive_from_value,,96178.73,2024-04-04,30.81,"BASE = valor da tabela de posicao (nao o valor liquido). A coluna Rentabilidade do extrato reconcilia exatamente com posicao/valor_aplicado nos 6 fundos. Valor liquido parece ser liquido de IR. Tabela de posicao mostra 96178.73; valor liquido 95254.02 na data da cota. Usar o par (valor_liquido, data_cota)."
+ALBERT,FUND_BRAVE_I,,return_only,,72567.43,2024-04-04,23.24,"BASE = valor da tabela de posicao (nao o valor liquido). A coluna Rentabilidade do extrato reconcilia exatamente com posicao/valor_aplicado nos 6 fundos. Valor liquido parece ser liquido de IR. Serie FIDC nao alcanca 04/04/2024 (re-registro 11/2024). Retorno abr/2025 = +1,19% (mar/2025 = +1,08%), classe Senior Serie 1. Valor da posicao CARREGADO do extrato e defasado - declarar na carta."
+ALBERT,FUND_TREND_INB,,derive_from_value,,305.44,2024-04-05,0.10,BASE = valor da tabela de posicao (nao o valor liquido). A coluna Rentabilidade do extrato reconcilia exatamente com posicao/valor_aplicado nos 6 fundos. Valor liquido parece ser liquido de IR. Tabela de posicao mostra 305.44.
+ALBERT,FUND_TRUXT_LB,,derive_from_value,,12522.05,2024-04-04,4.01,BASE = valor da tabela de posicao (nao o valor liquido). A coluna Rentabilidade do extrato reconcilia exatamente com posicao/valor_aplicado nos 6 fundos. Valor liquido parece ser liquido de IR. 
+ALBERT,FUND_STK_LB,,derive_from_value,,9745.97,2024-04-04,3.12,BASE = valor da tabela de posicao (nao o valor liquido). A coluna Rentabilidade do extrato reconcilia exatamente com posicao/valor_aplicado nos 6 fundos. Valor liquido parece ser liquido de IR. 
+ALBERT,FUND_CONSTELLATION,,derive_from_value,,8475.02,2024-04-04,2.71,BASE = valor da tabela de posicao (nao o valor liquido). A coluna Rentabilidade do extrato reconcilia exatamente com posicao/valor_aplicado nos 6 fundos. Valor liquido parece ser liquido de IR. 
+ALBERT,FUND_IBIUNA_HEDGE,,derive_from_value,,11601.02,2024-04-04,3.72,BASE = valor da tabela de posicao (nao o valor liquido). A coluna Rentabilidade do extrato reconcilia exatamente com posicao/valor_aplicado nos 6 fundos. Valor liquido parece ser liquido de IR. Tabela de posicao mostra 11601.02.
+ALBERT,CDB_C6_SET2024,,value_only,,40478.75,2025-05-07,12.97,Valor aplicado 30000.00. Instrumento vencido em 05/09/2024.
+ALBERT,CASH_BRL,,value_only,,74672.62,2025-05-07,,Fora da base de 312186.20 usada para os percentuais de alocacao.
+BEATRIZ,RF_POS_A,,derive_from_value,,42000,2025-03-31,,
+BEATRIZ,RF_POS_B,,derive_from_value,,42000,2025-03-31,,
+BEATRIZ,RF_POS_C,,derive_from_value,,40000,2025-03-31,,
+BEATRIZ,FUND_RIZA_LOTUS,,derive_from_value,,40000,2025-03-31,,
+BEATRIZ,FUND_TREND_INB,,derive_from_value,,35000,2025-03-31,,
+BEATRIZ,FUND_IBIUNA_HEDGE,,derive_from_value,,25000,2025-03-31,,
+BEATRIZ,FUND_STK_LB,,derive_from_value,,20000,2025-03-31,,
+BEATRIZ,FUND_CONSTELLATION,,derive_from_value,,18000,2025-03-31,,
+BEATRIZ,LREN3,1200,statement_qty,,,,,
+BEATRIZ,MRFG3,500,statement_qty,,,,,
+BEATRIZ,CASH_BRL,,value_only,,15000,2025-03-31,,
+CARLOS,FUND_CONSTELLATION,,derive_from_value,,90000,2025-03-31,,
+CARLOS,FUND_TRUXT_LB,,derive_from_value,,40000,2025-03-31,,
+CARLOS,FUND_RIZA_LOTUS,,derive_from_value,,30000,2025-03-31,,
+CARLOS,LREN3,3000,statement_qty,,,,,
+CARLOS,AZZA3,800,statement_qty,,,,,
+CARLOS,CDB_C6_SET2024,,value_only,,60000,2025-03-31,,
+CARLOS,CASH_BRL,,value_only,,50000,2025-03-31,,
+DANIELA,RF_POS_A,,derive_from_value,,50000,2025-03-31,,
+DANIELA,FUND_TREND_INB,,derive_from_value,,30000,2025-03-31,,
+DANIELA,FUND_BRAVE_I,,return_only,,70000,2025-03-31,,"Serie FIDC nao alcanca a ancora; retorno marcado, nivel carregado."
+DANIELA,MRFG3,400,statement_qty,,,,,
+DANIELA,CASH_BRL,,value_only,,120000,2025-03-31,,

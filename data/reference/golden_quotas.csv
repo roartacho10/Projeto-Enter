@@ -1,0 +1,21 @@
+instrument_id,date,quota,source,note
+FUND_RIZA_LOTUS,2024-04-04,1.33249080,cvm_inf_diario,data da cota do extrato
+FUND_TREND_INB,2024-04-05,1.37470054,cvm_inf_diario,data da cota do extrato
+FUND_TRUXT_LB,2024-04-04,1.47293890,cvm_inf_diario,data da cota do extrato
+FUND_STK_LB,2024-04-04,319.71032706,cvm_inf_diario,data da cota do extrato
+FUND_CONSTELLATION,2024-04-04,2.50386028,cvm_inf_diario,data da cota do extrato
+FUND_IBIUNA_HEDGE,2024-04-04,184.40321610,cvm_inf_diario,data da cota do extrato
+FUND_RIZA_LOTUS,2025-03-31,1.50442270,cvm_inf_diario,
+FUND_RIZA_LOTUS,2025-04-30,1.52268350,cvm_inf_diario,
+FUND_TREND_INB,2025-03-31,1.52910327,cvm_inf_diario,
+FUND_TREND_INB,2025-04-30,1.54492164,cvm_inf_diario,
+FUND_TRUXT_LB,2025-03-31,1.47076550,cvm_inf_diario,
+FUND_TRUXT_LB,2025-04-30,1.62027840,cvm_inf_diario,
+FUND_STK_LB,2025-03-31,318.31657924,cvm_inf_diario,
+FUND_STK_LB,2025-04-30,339.19281546,cvm_inf_diario,
+FUND_CONSTELLATION,2025-03-31,2.40030293,cvm_inf_diario,
+FUND_CONSTELLATION,2025-04-30,2.66742281,cvm_inf_diario,
+FUND_IBIUNA_HEDGE,2025-03-31,194.96563870,cvm_inf_diario,
+FUND_IBIUNA_HEDGE,2025-04-30,201.85347080,cvm_inf_diario,
+FUND_BRAVE_I,2025-03-31,1.756614,cvm_inf_mensal_fidc,"Derivada de PL/QT_COTA; VL_COTA publicada (1,76) e arredondada a 2 casas"
+FUND_BRAVE_I,2025-04-30,1.777464,cvm_inf_mensal_fidc,"Derivada de PL/QT_COTA; VL_COTA publicada (1,78) e arredondada a 2 casas"

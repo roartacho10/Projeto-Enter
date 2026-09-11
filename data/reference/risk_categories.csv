@@ -1,0 +1,12 @@
+risk_category,is_equity_exposure,note,letter_bucket
+equity_direct,1,Acao negociada em bolsa,Renda variável
+equity_fund,1,Fundo de acoes,Renda variável
+long_biased_fund,1,Fundo long biased: risco de renda variavel,Renda variável
+multimarket_macro,0,Multimercado macro: nao classificado como renda variavel,Multimercado
+credit_fund,0,Credito privado,Crédito privado e renda fixa
+fixed_income_fund,0,Renda fixa,Crédito privado e renda fixa
+fidc,0,Direitos creditorios,Crédito privado e renda fixa
+fixed_income_bank,0,Bancario,Capital ocioso
+fidc_senior,0,Cota senior de FIDC,Crédito privado e renda fixa
+cash,0,Caixa,Capital ocioso
+benchmark,0,Nao e posicao,

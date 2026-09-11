@@ -1,0 +1,4 @@
+event_id,instrument_id,event_type,event_date,ratio,note,source
+ARZZ3->AZZA3,AZZA3,rename_incorporation,2024-08-01,1.0,"Arezzo incorporou Grupo Soma; ARZZ3 deixou de existir. AZZA3.SA carrega serie continua pre-fusao -> troca 1:1, quantidade inalterada.",yahoo:AZZA3.SA + noticias
+MRFG3->MBRF3,MRFG3,rename_incorporation,2025-09-23,1.0,"Marfrig incorporou BRF; ticker passou a MBRF3. POSTERIOR ao periodo de referencia (abr/2025), mas o vendor so indexa pelo simbolo atual.",noticias
+HAPV3_grupamento,HAPV3,reverse_split,2025-05-01,15.0,"Grupamento 15:1 iniciado em maio/2025, POSTERIOR a abr/2025. Yahoo retroajusta o historico: preco publicado de 30/04/2025 (34,80) e 15x o realmente negociado (2,32). Dividir por 15 para o valor da posicao; o RETORNO nao e afetado (ambas as datas no mesmo ajuste).",InfoMoney/ADVFN + serie yahoo
