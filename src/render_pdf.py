@@ -96,9 +96,11 @@ def build_html(fit: float = 1.0, show_annex: bool = True) -> str:
                 alvo += f" (mín. {t_['min_issuers']} emissores)"
             trade_rows.append({"acao": verbo[t_["action"]], "alvo": alvo,
                                "valor": brmoney(t_["amount_brl"])})
-        plan_note = (f"Plano dimensionado pelo motor de regras. Após estas operações, nenhuma "
-                     f"das {len(plan['violations_before'])} violações de adequação permanece; "
-                     f"o caixa fica em {brmoney(plan['cash_after_brl'])}.")
+        # Client-facing wording. The mechanism behind the plan - the rules
+        # engine, the count of breaches it cleared - belongs to the audit
+        # trail in rebalance_plan.json, not to the person reading the letter.
+        plan_note = (f"Executadas as operações acima, a carteira volta aos limites do seu "
+                     f"perfil e o saldo em conta fica em {brmoney(plan['cash_after_brl'])}.")
 
     half = (len(pos_rows) + 1) // 2
     pos_cols = [pos_rows[:half], pos_rows[half:]]
@@ -127,11 +129,32 @@ FIT_STEPS = [
 
 
 def measure(page, html: str) -> list[dict]:
+    """
+    Two ways the layout can fail, and the second one is invisible to the first.
+
+    `over` is content taller than the page. But the signature and the
+    disclaimer sit in an absolutely positioned footer, which does not grow
+    scrollHeight - so prose can slide silently underneath it and the page still
+    measures as fitting. `under` catches that by comparing the bottom of the
+    last flowed element against the top of the footer.
+    """
     page.set_content(html, wait_until="load")
     return page.evaluate("""() => [...document.querySelectorAll('.page')]
-        .map((el, i) => ({page: i + 1,
-                          over: Math.round(el.scrollHeight - el.clientHeight)}))
-        .filter(x => x.over > 2)""")
+        .map((el, i) => {
+          const over = Math.round(el.scrollHeight - el.clientHeight);
+          let under = 0;
+          const foot = el.querySelector('.pagefoot');
+          const fit = el.querySelector('.fit');
+          if (foot && fit) {
+            const flow = [...fit.children].filter(c => c !== foot);
+            if (flow.length) {
+              const last = flow[flow.length - 1].getBoundingClientRect();
+              under = Math.round(last.bottom - foot.getBoundingClientRect().top);
+            }
+          }
+          return {page: i + 1, over, under};
+        })
+        .filter(x => x.over > 2 || x.under > 2)""")
 
 
 if __name__ == "__main__":
@@ -191,7 +214,10 @@ if __name__ == "__main__":
                 chosen = (fit, annex, label)
                 break
             print(f"  tentativa '{label}': estouro de "
-                  + ", ".join(f"{o['over']}px na pagina {o['page']}" for o in overflow))
+                  + ", ".join(
+                      f"{max(o['over'], o['under'])}px na pagina {o['page']}"
+                      + (" (invade o rodape)" if o["under"] > o["over"] else "")
+                      for o in overflow))
         if chosen:
             (OUT / "letter.html").write_text(html, encoding="utf-8")
             pg.pdf(path=str(OUT / "letter.pdf"), format="A4", print_background=True,

@@ -30,11 +30,18 @@ CHARTS.mkdir(parents=True, exist_ok=True)
 
 INK, MUTED, RULE = "#1A1A1A", "#6B6B6B", "#D9D9D9"
 
+# The letter's body text is 9.2pt and the content column is 174mm wide. Drawing
+# the figure at exactly that width means the SVG is displayed at its natural
+# size, so a point here is a point on the page and the chart's type matches the
+# prose instead of being whatever the scale factor happened to produce.
+BODY_PT = 9.2
+CONTENT_IN = 174 / 25.4
+
 
 def brnum(v: float, nd: int = 1) -> str:
     return f"{v:,.{nd}f}".replace(",", "\x00").replace(".", ",").replace("\x00", ".")
 plt.rcParams.update({
-    "font.family": "DejaVu Sans", "font.size": 7.4,
+    "font.family": "DejaVu Sans", "font.size": BODY_PT,
     "axes.edgecolor": RULE, "axes.labelcolor": INK,
     "text.color": INK, "xtick.color": MUTED, "ytick.color": INK,
     "svg.fonttype": "none",
@@ -105,7 +112,7 @@ def allocation_chart(pack: MetricsPack, ins: pd.DataFrame, cats: pd.DataFrame) -
     shade = {IDLE: "#1A1A1A", "Renda variável": "#6E6E6E",
              "Crédito privado e renda fixa": "#A8A8A8", "Multimercado": "#CFCFCF"}
 
-    fig, ax = plt.subplots(figsize=(6.0, 1.44), dpi=200)
+    fig, ax = plt.subplots(figsize=(CONTENT_IN, 1.62), dpi=200)
     left = 0.0
     for _, r in df.iterrows():
         share = r["v"] / total * 100
@@ -114,8 +121,8 @@ def allocation_chart(pack: MetricsPack, ins: pd.DataFrame, cats: pd.DataFrame) -
                 edgecolor="white", linewidth=1.6)
         if share >= 8:
             ax.text(left + r["v"] / 2, 0, f"{brnum(share)}%", va="center", ha="center",
-                    fontsize=8, color="white" if r["bucket"] in
-                    ("Capital ocioso", "Renda variável") else INK, fontweight="bold")
+                    fontsize=BODY_PT, color="white" if r["bucket"] in
+                    (IDLE, "Renda variável") else INK, fontweight="bold")
         left += r["v"]
 
     # Legend on two rows of two: the longest bucket name does not fit four
@@ -127,9 +134,9 @@ def allocation_chart(pack: MetricsPack, ins: pd.DataFrame, cats: pd.DataFrame) -
         ax.add_patch(plt.Rectangle((x, y - 0.05), total * 0.012, 0.10,
                                    color=shade.get(r["bucket"], "#8A8A8A"), clip_on=False))
         ax.text(x + total * 0.021, y, r["bucket"], va="center", ha="left",
-                fontsize=7.2, color=INK)
+                fontsize=BODY_PT, color=INK)
         ax.text(x + total * 0.021, y - 0.22, f"{brnum(share)}%  ·  R$ {brnum(r['v'], 0)}",
-                va="center", ha="left", fontsize=7.2, color=MUTED)
+                va="center", ha="left", fontsize=BODY_PT, color=MUTED)
 
     ax.set_xlim(0, total); ax.set_ylim(-1.40, 0.35)
     ax.set_xticks([]); ax.set_yticks([])
@@ -153,13 +160,13 @@ def contribution_chart(pack: MetricsPack, ins: pd.DataFrame) -> tuple[Path, list
     df = df[df["pp"].abs() >= 0.005].sort_values("pp")
     # Height follows the number of bars: dropping rows must shrink the figure,
     # otherwise the saved space never reaches the page.
-    fig, ax = plt.subplots(figsize=(6.0, 0.145 * len(df) + 0.22), dpi=200)
+    fig, ax = plt.subplots(figsize=(CONTENT_IN, 0.155 * len(df) + 0.22), dpi=200)
     ax.barh(df["name"], df["pp"], height=0.66, color=INK)
     span = max(abs(df["pp"].min()), df["pp"].max()) or 1
     for y, v in zip(df["name"], df["pp"]):
         off = span * 0.02 if v >= 0 else -span * 0.02
         ax.text(v + off, y, ("+" if v >= 0 else "") + brnum(v, 2) + " p.p.",
-                va="center", ha="left" if v >= 0 else "right", fontsize=7,
+                va="center", ha="left" if v >= 0 else "right", fontsize=BODY_PT,
                 color=INK if abs(v) > 0.001 else MUTED)
     ax.axvline(0, color=RULE, lw=1)
     ax.set_xlim(-span * 0.30, span * 1.34)
@@ -196,7 +203,7 @@ def trajectory_chart(hist: dict) -> Path | None:
 
     ncol = 3
     nrow = -(-len(pos) // ncol)
-    fig, axes = plt.subplots(nrow, ncol, figsize=(6.6, 1.34 * nrow + 0.30), dpi=200,
+    fig, axes = plt.subplots(nrow, ncol, figsize=(CONTENT_IN, 1.34 * nrow + 0.30), dpi=200,
                              sharex=True, sharey=False, squeeze=False)
     axes = axes.ravel()
 

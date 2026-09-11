@@ -88,6 +88,13 @@ st.markdown("""
             margin:.35rem 0; font-size:.88rem;}
   .finding b {display:block;}
   .finding span {color:#6B6B6B; font-size:.8rem;}
+  .state {display:grid; grid-template-columns:1fr 1fr; gap:0 1.8rem; margin:.2rem 0 .4rem;}
+  .state.one {grid-template-columns:1fr;}
+  .state .r {display:flex; justify-content:space-between; align-items:baseline; gap:1rem;
+             border-bottom:1px solid #F1F1EF; padding:.3rem .1rem; font-size:.86rem;}
+  .state .r .k {color:#5A5A5A;}
+  .state .r .v {white-space:nowrap; color:#5A5A5A;}
+  .state .r .v em {font-style:normal; font-weight:700; color:#1A1A1A;}
   .chart {margin:.5rem 0 .3rem;}
   .chart svg {width:100%; height:auto; max-width:900px;}
   div[data-testid="stMetricValue"] {font-size:1.35rem;}
@@ -128,6 +135,32 @@ def ambient_key() -> tuple[str, str]:
     if os.environ.get("OPENAI_API_KEY", "").strip():
         return os.environ["OPENAI_API_KEY"].strip(), "variável de ambiente"
     return "", ""
+
+
+@st.cache_data(show_spinner=False)
+def instruments() -> pd.DataFrame:
+    return pd.read_csv(REF / "instruments.csv", dtype=str).fillna("").set_index("instrument_id")
+
+
+def limits(cid: str) -> dict[str, str]:
+    """Thresholds in force for this client, from the policy derive_policy wrote."""
+    p = OUT / cid / "suitability_policy.csv"
+    if not p.exists():
+        p = REF / "suitability_policy.csv"
+    if not p.exists():
+        return {}
+    d = pd.read_csv(p, dtype=str).fillna("")
+    return dict(zip(d["rule_id"], d["threshold"]))
+
+
+def pct(v) -> str:
+    return f"{float(v):.1f}%".replace(".", ",")
+
+
+def pp(v) -> str:
+    """Two decimals: contributions run to hundredths, and 0,04 rounded to one
+    decimal reads as 0,0 - which says the position did nothing."""
+    return f"{float(v):+.2f}".replace(".", ",") + " p.p."
 
 
 def load(cid: str, name: str):
@@ -289,14 +322,71 @@ else:
                 f"{pack['excess_return_pp']:+.2f}".replace(".", ",") + " p.p.")
     k[3].metric("Cobertura de marcação", f"{pack['coverage_pct']:.2f}%".replace(".", ","))
 
+    # Eight findings as eight stacked blocks pushed everything else below the
+    # fold. The advisor needs the state of the portfolio and what moved since
+    # last month; the case for each finding is one click away.
+    lim = limits(cid)
     if rec and rec["recommendations"]:
-        st.markdown("**Pontos de atenção**")
+        by_rule: dict[str, list] = {}
         for r in rec["recommendations"]:
-            st.markdown(f'<div class="finding"><b>{r["observed"]}</b>'
-                        f'<span>Limite: {r["threshold"]} · {r["policy_source"]}</span></div>',
-                        unsafe_allow_html=True)
+            by_rule.setdefault(r["rule_id"], []).append(r)
+
+        def worst(rid):
+            v = [x["observed_pct"] for x in by_rule.get(rid, []) if x.get("observed_pct")]
+            return max(v) if v else None
+
+        rows = []
+        if "MAX_IDLE_CASH_PCT" in by_rule:
+            rows.append(("Caixa", f'<em>{pct(pack["cash_pct_of_total"])}</em> '
+                                  f'· limite {pct(lim.get("MAX_IDLE_CASH_PCT", 0))}'))
+        if "MAX_EQUITY_LOOKTHROUGH_PCT" in by_rule:
+            rows.append(("Renda variável",
+                         f'<em>{pct(rec["equity_lookthrough_pct"])}</em> '
+                         f'· limite {pct(lim.get("MAX_EQUITY_LOOKTHROUGH_PCT", 0))}'))
+        if "MAX_SINGLE_POSITION_PCT" in by_rule:
+            n = len(by_rule["MAX_SINGLE_POSITION_PCT"])
+            rows.append(("Concentração",
+                         f'<em>{n} {"posição" if n == 1 else "posições"}</em> acima de '
+                         f'{pct(lim.get("MAX_SINGLE_POSITION_PCT", 0))} '
+                         f'· maior {pct(worst("MAX_SINGLE_POSITION_PCT") or 0)}'))
+        if "NO_MATURED_HOLDINGS" in by_rule:
+            n = len(by_rule["NO_MATURED_HOLDINGS"])
+            rows.append(("Papel vencido", f'<em>{n}</em> em carteira, sem remuneração'))
+        for rid in ("RESTRICTED_CATEGORY", "RESTRICTED_CATEGORY_FIDC"):
+            if rid in by_rule:
+                n = len(by_rule[rid])
+                rows.append(("Fora do mandato",
+                             f'<em>{n} {"posição" if n == 1 else "posições"}</em> '
+                             f'em famílias não previstas'))
+
+        st.markdown("**Estado da carteira**")
+        st.markdown('<div class="state">' + "".join(
+            f'<div class="r"><span class="k">{k}</span><span class="v">{v}</span></div>'
+            for k, v in rows) + "</div>", unsafe_allow_html=True)
     elif rec:
         st.success("Carteira aderente ao mandato. Nenhum ajuste necessário.")
+
+    # ---- what actually changed since last month
+    names = instruments()["display_name"].to_dict()
+    movers = sorted(pack["positions"], key=lambda m: -abs(m["contribution_pp"]))
+    movers = [m for m in movers if abs(m["contribution_pp"]) >= 0.01][:5]
+    if movers:
+        st.markdown("**Principais mudanças no mês**")
+        st.markdown('<div class="state one">' + "".join(
+            f'<div class="r"><span class="k">{names.get(m["instrument_id"], m["instrument_id"])}'
+            f'</span><span class="v">'
+            f'{("+" if m["return_pct"] >= 0 else "")}{pct(m["return_pct"])} no ativo'
+            f' · <em>{pp(m["contribution_pp"])}</em> na carteira</span></div>'
+            for m in movers) + "</div>", unsafe_allow_html=True)
+        st.caption("Contribuição de cada posição para o resultado do patrimônio, "
+                   "de 31/03 a 30/04/2025.")
+
+    if rec and rec["recommendations"]:
+        with st.expander(f"Base de cada ponto de atenção ({len(rec['recommendations'])})"):
+            for r in rec["recommendations"]:
+                st.markdown(f'<div class="finding"><b>{r["observed"]}</b>'
+                            f'<span>Limite: {r["threshold"]} · {r["policy_source"]}</span></div>',
+                            unsafe_allow_html=True)
 
     if plan and plan["trades"]:
         st.markdown("**Ajustes sugeridos**")

@@ -21,56 +21,72 @@
             font-size: 8.4pt; padding: 6mm 0 2.5mm; }
   .kicker b { font-weight: 700; }
   .kicker span { color: #8A8A8A; }
+  /* Page two repeats the band with the logo alone. The kicker row is kept as an
+     empty spacer of the same height so the black block starts at the same
+     vertical offset on both pages - a continuation header that lines up. */
+  /* Not height:0 - the line box has to exist, or the band starts higher on
+     page two than on page one and the two headers stop lining up. */
+  .kicker.spacer { visibility: hidden; }
   .band { background: #231F20; color: #fff; margin: 0 -18mm; padding: 4.5mm 18mm 5mm;
           position: relative; }
   .band .eyebrow { color: #FFC700; font-size: 13pt; font-weight: 400; margin: 0 0 2mm; }
   .band h1 { font-size: 16pt; font-weight: 400; line-height: 1.25; margin: 0; max-width: 145mm; }
   .band .sub { font-size: 10.5pt; color: #D8D8D8; margin: 2mm 0 0; }
+  /* The logo is 15mm wide and ~13.5mm tall; the continuation band has no text
+     to give it height, so it is declared tall enough to contain the logo
+     instead of letting it spill over the edges. */
+  .band.cont { padding: 2mm 18mm; min-height: 18mm; }
   .logo { position: absolute; right: 18mm; top: 50%; transform: translateY(-50%);
           width: 15mm; height: auto; display: block; }
-  .logo.dark { position: static; margin-left: auto; width: 13mm; }
-  .byline { padding: 3mm 0 0; }
-  .byline b { font-size: 10pt; }
-  .byline i { display: block; color: #4A4A4A; font-size: 8.6pt; }
 
   /* ---- key takeaways ---- */
   .highlights { background: #FDF3D0; border-left: 3px solid #FFC700;
-                padding: 3mm 4.5mm 2.4mm; margin: 3mm 0 3mm; }
-  .highlights p { margin: 0 0 2.4mm; font-style: italic; font-size: 8.8pt; line-height: 1.4; }
+                padding: 3mm 4.5mm 2.4mm; margin: 2mm 0 3mm; }
+  .highlights p { margin: 0 0 2.4mm; font-style: italic; line-height: 1.4; }
   .highlights p:last-child { margin-bottom: 0; }
 
   p.body { text-align: justify; margin: 0 0 2.8mm; }
   p.body .lead { font-weight: 700; }
-  h2 { font-size: 10pt; margin: 3mm 0 2mm; padding-bottom: 1mm;
+  /* One section heading style, used by every section without exception. */
+  h2 { font-size: 10pt; margin: 3.5mm 0 2mm; padding-bottom: 1mm;
        border-bottom: 1px solid #D9D9D9; }
+  .page > .fit > h2:first-child { margin-top: 3mm; }
 
-  /* ---- summary table ---- */
-  table.kpi { width: 100%; border-collapse: collapse; margin: 1mm 0 2mm; font-size: 8.8pt; }
+  /* ---- tables ----
+     Header and value share one alignment per column: the class sits on both the
+     th and the td, so a right-aligned figure can never sit under a
+     left-aligned label. */
+  table.kpi { width: 100%; border-collapse: collapse; margin: 1mm 0 2mm; }
   table.kpi th { text-align: left; font-weight: 700; padding: 1.6mm 2mm;
                  border-bottom: 1.2px solid #1A1A1A; }
+  table.kpi th.n { text-align: right; }
+  table.kpi th.c, table.kpi td.c { text-align: center; }
   table.kpi td { padding: 1.25mm 2mm; border-bottom: 1px solid #EDEDED; }
   table.kpi td.n { text-align: right; font-variant-numeric: tabular-nums; }
   table.kpi tr.total td { font-weight: 700; border-top: 1.2px solid #1A1A1A;
                           border-bottom: none; }
 
-  /* ---- figures ---- */
-  figure { margin: 1.5mm 0 2.5mm; border: 1px solid #D9D9D9; padding: 2mm 2.5mm 1.5mm; }
-  figure figcaption { text-align: center; margin-bottom: 1mm; }
-  figure .ftitle { font-weight: 700; font-size: 9pt; display: block; }
-  figure .fsource { color: #6B6B6B; font-size: 7.6pt; display: block; }
+  /* ---- figures: titled like a table, not boxed like a sidebar ---- */
+  figure { margin: 2mm 0 3mm; padding: 0; }
+  figure figcaption { text-align: left; padding-bottom: 1mm; margin-bottom: 1.5mm;
+                      border-bottom: 1.2px solid #1A1A1A; }
+  figure .ftitle { font-weight: 700; display: block; }
+  figure .fsource { color: #6B6B6B; font-size: 7.6pt; display: block; margin-top: 0.4mm; }
   figure svg { width: 100%; height: auto; display: block; }
 
   .kpinote { color: #6B6B6B; font-size: 7.6pt; margin: -1mm 0 2mm 2mm; }
   .poswrap { display: flex; gap: 6mm; }
-  table.trades { font-size: 8.3pt; margin-top: 2mm; }
   table.trades td { padding: 1.1mm 2mm; }
   table.trades td.acao { font-weight: 700; white-space: nowrap; }
-  table.pos { font-size: 7.8pt; }
-  table.pos td { padding: 0.8mm 1.5mm; }
+  table.pos td { padding: 0.9mm 1.5mm; }
   table.pos th { padding: 1.2mm 1.5mm; }
-  .signoff { margin-top: 4mm; }
-  .disclaimer { position: absolute; left: 18mm; right: 18mm; bottom: 8mm;
-                border-top: 1px solid #D9D9D9; padding-top: 2mm;
+
+  /* ---- foot of page two: signature, then the disclaimer ---- */
+  .pagefoot { position: absolute; left: 18mm; right: 18mm; bottom: 8mm; }
+  .signature { margin: 0 0 3.5mm; }
+  .signature b { display: block; }
+  .signature span { color: #4A4A4A; }
+  .disclaimer { border-top: 1px solid #D9D9D9; padding-top: 2mm;
                 color: #6B6B6B; font-size: 6.9pt; line-height: 1.35; text-align: justify; }
 </style></head><body style="--fit: {{ doc.fit }}">
 
@@ -83,13 +99,13 @@
     <p class="sub">{{ doc.subtitle }}</p>
     <img class="logo" src="{{ assets.logo_white }}" alt="XP Investimentos">
   </div>
-  <div class="byline"><b>{{ doc.advisor }}</b><i>{{ doc.advisor_role }}</i></div>
 
+  <h2>Resumo executivo</h2>
   <div class="highlights">
     {% for h in letter.highlights %}<p>{{ h }}</p>{% endfor %}
   </div>
-
   <p class="body">{{ letter.greeting }}</p>
+
   <h2>Desempenho da carteira</h2>
   <p class="body">{{ letter.performance }}</p>
 
@@ -111,7 +127,11 @@
 </div></section>
 
 <section class="page"><div class="fit">
-  <div class="kicker"><img class="logo dark" src="{{ assets.logo }}" alt="XP Investimentos"></div>
+  <div class="kicker spacer"><b>&nbsp;</b></div>
+  <div class="band cont">
+    <img class="logo" src="{{ assets.logo_white }}" alt="XP Investimentos">
+  </div>
+
   <h2>Cenário macroeconômico</h2>
   <p class="body">{{ letter.macro }}</p>
 
@@ -135,8 +155,7 @@
   {% endif %}
 
   <p class="body">{{ letter.coverage }}</p>
-  <p class="body signoff">{{ letter.closing }}</p>
-  <p class="body"><b>{{ doc.advisor }}</b><br>{{ doc.advisor_role }}</p>
+  <p class="body">{{ letter.closing }}</p>
 
   {% if show_annex %}
   <h2>Detalhamento das posições em {{ doc.date_end }}</h2>
@@ -153,14 +172,19 @@
   </div>
   {% endif %}
 
-  <div class="disclaimer">
-    Documento gerado automaticamente por sistema em fase de prova de conceito, a partir de dados
-    públicos da CVM e do Banco Central e de posições informadas em extrato. Cobertura de marcação a
-    mercado de {{ figures.cobertura_marcacao }} da carteira investida; posições não marcadas mantêm
-    o último valor informado. Rentabilidade passada não representa garantia de resultado futuro e
-    os valores apresentados não são líquidos de impostos. Este material não constitui oferta,
-    recomendação individualizada ou análise de valores mobiliários nos termos da Resolução CVM nº
-    20/2021. Execução {{ doc.run_id }}.
+  <div class="pagefoot">
+    <p class="signature"><b>{{ doc.advisor }}</b><span>{{ doc.advisor_role }}</span></p>
+    <!-- Client-facing disclosure only. The execution identifier and the
+         proof-of-concept caveat are part of the audit trail and live in
+         output/<cliente>/generation_log.json and layout_report.json. -->
+    <div class="disclaimer">
+      Os valores apresentados refletem marcação a mercado de {{ figures.cobertura_marcacao }} da
+      carteira investida; posições sem marcação disponível são informadas pelo último valor
+      constante do extrato. Rentabilidade passada não representa garantia de resultado futuro e os
+      valores não são líquidos de impostos. Este material não constitui oferta, recomendação
+      individualizada ou análise de valores mobiliários nos termos da Resolução CVM nº 20/2021.
+      Dados de mercado: CVM, B3 e Banco Central do Brasil.
+    </div>
   </div>
 </div></section>
 </body></html>
