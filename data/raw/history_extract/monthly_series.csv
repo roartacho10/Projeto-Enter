@@ -1,0 +1,332 @@
+instrument_id,month,date,value,kind,source,retrieved_at,note
+AZZA3,2023-04,2023-04-28,66.37999725341797,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2023-05,2023-05-31,73.7699966430664,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2023-06,2023-06-30,79.06999969482422,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2023-07,2023-07-31,82.4000015258789,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2023-08,2023-08-31,70.66999816894531,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2023-09,2023-09-29,64.95999908447266,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2023-10,2023-10-31,58.38999938964844,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2023-11,2023-11-30,59.34000015258789,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2023-12,2023-12-28,64.52999877929688,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2024-01,2024-01-31,62.59000015258789,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2024-02,2024-02-29,59.22999954223633,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2024-03,2024-03-28,64.2699966430664,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2024-04,2024-04-30,51.91999816894531,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2024-05,2024-05-31,49.400001525878906,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2024-06,2024-06-28,51.349998474121094,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2024-07,2024-07-31,48.650001525878906,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2024-08,2024-08-30,49.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2024-09,2024-09-30,42.16999816894531,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2024-10,2024-10-31,41.2400016784668,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2024-11,2024-11-29,36.689998626708984,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2024-12,2024-12-30,29.579999923706055,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2025-01,2025-01-31,34.150001525878906,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2025-02,2025-02-28,26.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2025-03,2025-03-31,24.5,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+AZZA3,2025-04,2025-04-30,31.84000015258789,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+FUND_BRAVE_I,2024-11,2024-11-30,0.94,return_pct,cvm_inf_mensal_fidc,2026-09-11T13:42:09+00:00,rentabilidade publicada da classe 'Subclasse Senior Série 1'
+FUND_BRAVE_I,2024-12,2024-12-31,1.09,return_pct,cvm_inf_mensal_fidc,2026-09-11T13:42:09+00:00,rentabilidade publicada da classe 'Subclasse Senior Série 1'
+FUND_BRAVE_I,2025-01,2025-01-31,1.17,return_pct,cvm_inf_mensal_fidc,2026-09-11T13:42:09+00:00,rentabilidade publicada da classe 'Subclasse Senior Série 1'
+FUND_BRAVE_I,2025-02,2025-02-28,1.11,return_pct,cvm_inf_mensal_fidc,2026-09-11T13:42:09+00:00,rentabilidade publicada da classe 'Subclasse Senior Série 1'
+FUND_BRAVE_I,2025-03,2025-03-31,1.08,return_pct,cvm_inf_mensal_fidc,2026-09-11T13:31:16+00:00,rentabilidade publicada da classe 'Subclasse Senior Série 1'
+FUND_BRAVE_I,2025-04,2025-04-30,1.19,return_pct,cvm_inf_mensal_fidc,2026-09-11T13:31:16+00:00,rentabilidade publicada da classe 'Subclasse Senior Série 1'
+FUND_CONSTELLATION,2023-04,2023-04-28,2.06337095,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_CONSTELLATION,2023-05,2023-05-31,2.18192025,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_CONSTELLATION,2023-06,2023-06-30,2.3843617,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_CONSTELLATION,2023-07,2023-07-31,2.48599897,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_CONSTELLATION,2023-08,2023-08-31,2.37407233,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_CONSTELLATION,2023-09,2023-09-29,2.32659683,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_CONSTELLATION,2023-10,2023-10-31,2.18999527,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_CONSTELLATION,2023-11,2023-11-30,2.50268614,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_CONSTELLATION,2023-12,2023-12-29,2.61440556,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2024-01,2024-01-31,2.51969455,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2024-02,2024-02-29,2.53060726,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2024-03,2024-03-28,2.5269379,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2024-04,2024-04-30,2.37959727,price,cvm_inf_diario,2026-09-11T13:30:59+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2024-05,2024-05-31,2.32094076,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2024-06,2024-06-28,2.36419615,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2024-07,2024-07-31,2.45188305,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2024-08,2024-08-30,2.62754458,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2024-09,2024-09-30,2.49364732,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2024-10,2024-10-31,2.50636512,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2024-11,2024-11-29,2.35110765,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2024-12,2024-12-31,2.21156388,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2025-01,2025-01-31,2.40564679,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2025-02,2025-02-28,2.34923021,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2025-03,2025-03-31,2.40030293,price,cvm_inf_diario,2026-09-11T13:31:16+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_CONSTELLATION,2025-04,2025-04-30,2.66742281,price,cvm_inf_diario,2026-09-11T13:31:16+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2023-04,2023-04-28,174.0022584,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_IBIUNA_HEDGE,2023-05,2023-05-31,174.1639666,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_IBIUNA_HEDGE,2023-06,2023-06-30,178.0135842,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_IBIUNA_HEDGE,2023-07,2023-07-31,179.9329442,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_IBIUNA_HEDGE,2023-08,2023-08-31,178.146224,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_IBIUNA_HEDGE,2023-09,2023-09-29,175.1359054,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_IBIUNA_HEDGE,2023-10,2023-10-31,173.6008024,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_IBIUNA_HEDGE,2023-11,2023-11-30,178.2062003,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_IBIUNA_HEDGE,2023-12,2023-12-29,186.3064621,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2024-01,2024-01-31,183.2371267,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2024-02,2024-02-29,184.6570495,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2024-03,2024-03-28,186.0982414,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2024-04,2024-04-30,179.0204759,price,cvm_inf_diario,2026-09-11T13:30:59+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2024-05,2024-05-31,180.9319827,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2024-06,2024-06-28,180.4796609,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2024-07,2024-07-31,181.4063728,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2024-08,2024-08-30,182.6793049,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2024-09,2024-09-30,183.6105975,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2024-10,2024-10-31,183.9878056,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2024-11,2024-11-29,189.4965775,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2024-12,2024-12-31,193.3760921,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2025-01,2025-01-31,193.2951509,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2025-02,2025-02-28,195.0904484,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2025-03,2025-03-31,194.9656387,price,cvm_inf_diario,2026-09-11T13:31:16+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_IBIUNA_HEDGE,2025-04,2025-04-30,201.8534708,price,cvm_inf_diario,2026-09-11T13:31:16+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2023-04,2023-04-28,1.1821108,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_RIZA_LOTUS,2023-05,2023-05-31,1.1951725,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_RIZA_LOTUS,2023-06,2023-06-30,1.209956,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_RIZA_LOTUS,2023-07,2023-07-31,1.2235899,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_RIZA_LOTUS,2023-08,2023-08-31,1.2320814,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_RIZA_LOTUS,2023-09,2023-09-29,1.2477691,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_RIZA_LOTUS,2023-10,2023-10-31,1.262505,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_RIZA_LOTUS,2023-11,2023-11-30,1.2770639,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_RIZA_LOTUS,2023-12,2023-12-29,1.2867957,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2024-01,2024-01-31,1.3045045,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2024-02,2024-02-29,1.317563,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2024-03,2024-03-28,1.3319607,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2024-04,2024-04-30,1.3452461,price,cvm_inf_diario,2026-09-11T13:30:59+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2024-05,2024-05-31,1.3623675,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2024-06,2024-06-28,1.3741614,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2024-07,2024-07-31,1.3920608,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2024-08,2024-08-30,1.4100822,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2024-09,2024-09-30,1.4241542,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2024-10,2024-10-31,1.4368019,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2024-11,2024-11-29,1.4485027,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2024-12,2024-12-31,1.4564172,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2025-01,2025-01-31,1.4734668,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2025-02,2025-02-28,1.488857,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2025-03,2025-03-31,1.5044227,price,cvm_inf_diario,2026-09-11T13:31:16+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_RIZA_LOTUS,2025-04,2025-04-30,1.5226835,price,cvm_inf_diario,2026-09-11T13:31:16+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2023-04,2023-04-28,264.53305993,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_STK_LB,2023-05,2023-05-31,279.36562834,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_STK_LB,2023-06,2023-06-30,298.2221213,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_STK_LB,2023-07,2023-07-31,307.86544259,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_STK_LB,2023-08,2023-08-31,294.5925333,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_STK_LB,2023-09,2023-09-29,292.09442228,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_STK_LB,2023-10,2023-10-31,276.62875511,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_STK_LB,2023-11,2023-11-30,301.50449194,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_STK_LB,2023-12,2023-12-29,316.87383381,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2024-01,2024-01-31,311.46409289,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2024-02,2024-02-29,321.54121367,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2024-03,2024-03-28,322.63641317,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2024-04,2024-04-30,301.34167974,price,cvm_inf_diario,2026-09-11T13:30:59+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2024-05,2024-05-31,300.56731814,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2024-06,2024-06-28,314.61332892,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2024-07,2024-07-31,319.03446477,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2024-08,2024-08-30,330.84165076,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2024-09,2024-09-30,324.94277118,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2024-10,2024-10-31,326.57608345,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2024-11,2024-11-29,324.59129714,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2024-12,2024-12-31,317.3971458,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2025-01,2025-01-31,333.56992138,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2025-02,2025-02-28,320.62314057,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2025-03,2025-03-31,318.31657924,price,cvm_inf_diario,2026-09-11T13:31:16+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_STK_LB,2025-04,2025-04-30,339.19281546,price,cvm_inf_diario,2026-09-11T13:31:16+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2023-04,2023-04-28,1.23059127,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TREND_INB,2023-05,2023-05-31,1.24488216,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TREND_INB,2023-06,2023-06-30,1.25865403,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TREND_INB,2023-07,2023-07-31,1.27201607,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TREND_INB,2023-08,2023-08-31,1.28693272,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TREND_INB,2023-09,2023-09-29,1.29977729,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TREND_INB,2023-10,2023-10-31,1.31248272,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TREND_INB,2023-11,2023-11-30,1.32428884,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TREND_INB,2023-12,2023-12-29,1.33638895,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2024-01,2024-01-31,1.34950718,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2024-02,2024-02-29,1.36040795,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2024-03,2024-03-28,1.37189006,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2024-04,2024-04-30,1.38425269,price,cvm_inf_diario,2026-09-11T13:30:59+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2024-05,2024-05-31,1.39575913,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2024-06,2024-06-28,1.4069984,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2024-07,2024-07-31,1.41999735,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2024-08,2024-08-30,1.43273467,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2024-09,2024-09-30,1.44508143,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2024-10,2024-10-31,1.45907385,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2024-11,2024-11-29,1.47114753,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2024-12,2024-12-31,1.48377461,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2025-01,2025-01-31,1.49978762,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2025-02,2025-02-28,1.51463651,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2025-03,2025-03-31,1.52910327,price,cvm_inf_diario,2026-09-11T13:31:16+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TREND_INB,2025-04,2025-04-30,1.54492164,price,cvm_inf_diario,2026-09-11T13:31:16+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2023-04,2023-04-28,1.2219328,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TRUXT_LB,2023-05,2023-05-31,1.3453101,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TRUXT_LB,2023-06,2023-06-30,1.4641343,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TRUXT_LB,2023-07,2023-07-31,1.5046631,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TRUXT_LB,2023-08,2023-08-31,1.4429254,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TRUXT_LB,2023-09,2023-09-29,1.4146339,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TRUXT_LB,2023-10,2023-10-31,1.312784,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TRUXT_LB,2023-11,2023-11-30,1.4478309,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO)
+FUND_TRUXT_LB,2023-12,2023-12-29,1.4768169,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2024-01,2024-01-31,1.4304805,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2024-02,2024-02-29,1.4358697,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2024-03,2024-03-28,1.4808747,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2024-04,2024-04-30,1.3949879,price,cvm_inf_diario,2026-09-11T13:30:59+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2024-05,2024-05-31,1.3652507,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2024-06,2024-06-28,1.3638582,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2024-07,2024-07-31,1.4627449,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2024-08,2024-08-30,1.5447606,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2024-09,2024-09-30,1.5131548,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2024-10,2024-10-31,1.5108742,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2024-11,2024-11-29,1.4651886,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2024-12,2024-12-31,1.4195447,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2025-01,2025-01-31,1.5021955,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2025-02,2025-02-28,1.4751236,price,cvm_inf_diario,2026-09-11T13:42:09+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2025-03,2025-03-31,1.4707655,price,cvm_inf_diario,2026-09-11T13:31:16+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+FUND_TRUXT_LB,2025-04,2025-04-30,1.6202784,price,cvm_inf_diario,2026-09-11T13:31:16+00:00,cota do ultimo dia util do mes (CNPJ_FUNDO_CLASSE)
+HAPV3,2023-04,2023-04-28,2.7599998474121095,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2023-05,2023-05-31,3.9899998982747396,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2023-06,2023-06-30,4.3799997965494795,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2023-07,2023-07-31,4.8,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2023-08,2023-08-31,4.259999847412109,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2023-09,2023-09-29,4.7,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2023-10,2023-10-31,3.6899998982747397,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2023-11,2023-11-30,4.369999694824219,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2023-12,2023-12-28,4.45,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2024-01,2024-01-31,3.88000005086263,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2024-02,2024-02-29,3.66999994913737,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2024-03,2024-03-28,3.7,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2024-04,2024-04-30,3.6899998982747397,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2024-05,2024-05-31,3.9899998982747396,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2024-06,2024-06-28,3.83000005086263,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2024-07,2024-07-31,4.06999994913737,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2024-08,2024-08-30,4.23999989827474,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2024-09,2024-09-30,4.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2024-10,2024-10-31,3.51999994913737,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2024-11,2024-11-29,2.7,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2024-12,2024-12-30,2.23000005086263,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2025-01,2025-01-31,2.41999994913737,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2025-02,2025-02-28,2.109999974568685,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2025-03,2025-03-31,2.209999847412109,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+HAPV3,2025-04,2025-04-30,2.3199999491373697,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes; dividido por 15
+IBOV,2023-04,2023-04-28,104432.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2023-05,2023-05-31,108335.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2023-06,2023-06-30,118087.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2023-07,2023-07-31,121943.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2023-08,2023-08-31,115742.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2023-09,2023-09-29,116565.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2023-10,2023-10-31,113144.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2023-11,2023-11-30,127331.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2023-12,2023-12-28,134185.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2024-01,2024-01-31,127752.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2024-02,2024-02-29,129020.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2024-03,2024-03-28,128106.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2024-04,2024-04-30,125924.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2024-05,2024-05-31,122098.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2024-06,2024-06-28,123907.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2024-07,2024-07-31,127652.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2024-08,2024-08-30,136004.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2024-09,2024-09-30,131816.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2024-10,2024-10-31,129713.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2024-11,2024-11-29,125668.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2024-12,2024-12-30,120283.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2025-01,2025-01-31,126135.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2025-02,2025-02-28,122799.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2025-03,2025-03-31,130260.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+IBOV,2025-04,2025-04-30,135067.0,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2023-04,2023-04-28,14.399999618530273,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2023-05,2023-05-31,17.68181800842285,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2023-06,2023-06-30,18.18181800842285,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2023-07,2023-07-31,17.045454025268555,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2023-08,2023-08-31,14.57272720336914,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2023-09,2023-09-29,12.181818008422852,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2023-10,2023-10-31,11.145454406738281,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2023-11,2023-11-30,14.881817817687988,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2023-12,2023-12-28,15.836362838745117,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2024-01,2024-01-31,14.590909004211426,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2024-02,2024-02-29,14.363636016845703,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2024-03,2024-03-28,15.436363220214844,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2024-04,2024-04-30,13.936363220214844,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2024-05,2024-05-31,11.927271842956543,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2024-06,2024-06-28,11.345454216003418,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2024-07,2024-07-31,12.054545402526855,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2024-08,2024-08-30,15.727272033691406,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2024-09,2024-09-30,16.418180465698242,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2024-10,2024-10-31,16.881818771362305,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2024-11,2024-11-29,13.690909385681152,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2024-12,2024-12-30,12.119999885559082,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2025-01,2025-01-31,13.649999618530273,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2025-02,2025-02-28,11.329999923706055,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2025-03,2025-03-31,12.229999542236328,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+LREN3,2025-04,2025-04-30,14.609999656677246,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MACRO_CDI,2023-04,2023-04-28,0.9181412243290277,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2023-05,2023-05-31,1.1233146856986398,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2023-06,2023-06-30,1.0719822473548524,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2023-07,2023-07-31,1.0719822473548524,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2023-08,2023-08-31,1.1374956476198017,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2023-09,2023-09-29,0.9729017544111374,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2023-10,2023-10-31,0.9975672238483169,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2023-11,2023-11-30,0.9159878255821985,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2023-12,2023-12-29,0.8945247967375058,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2024-01,2024-01-31,0.9666901743658141,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2024-02,2024-02-29,0.8002004357681836,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2024-03,2024-03-28,0.8316737660555074,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2024-04,2024-04-30,0.8874331113757794,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2024-05,2024-05-31,0.8324420253383646,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2024-06,2024-06-28,0.7883369678362895,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2024-07,2024-07-31,0.9071223424248709,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2024-08,2024-08-30,0.8675116705918473,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2024-09,2024-09-30,0.835157409379228,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2024-10,2024-10-31,0.9279575755079428,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2024-11,2024-11-29,0.7929903920274706,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2024-12,2024-12-31,0.93143107189948,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2025-01,2025-01-31,1.013201356414828,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2025-02,2025-02-28,0.9853222624513602,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2025-03,2025-03-31,0.9640295622482142,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_CDI,2025-04,2025-04-30,1.0558796236773471,return_pct,bcb_sgs_12,2026-09-11T13:38:18+00:00,CDI diario capitalizado no mes
+MACRO_IPCA,2023-04,2023-04-01,0.61,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2023-05,2023-05-01,0.23,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2023-06,2023-06-01,-0.08,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2023-07,2023-07-01,0.12,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2023-08,2023-08-01,0.23,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2023-09,2023-09-01,0.26,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2023-10,2023-10-01,0.24,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2023-11,2023-11-01,0.28,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2023-12,2023-12-01,0.56,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2024-01,2024-01-01,0.42,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2024-02,2024-02-01,0.83,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2024-03,2024-03-01,0.16,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2024-04,2024-04-01,0.38,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2024-05,2024-05-01,0.46,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2024-06,2024-06-01,0.21,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2024-07,2024-07-01,0.38,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2024-08,2024-08-01,-0.02,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2024-09,2024-09-01,0.44,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2024-10,2024-10-01,0.56,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2024-11,2024-11-01,0.39,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2024-12,2024-12-01,0.52,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2025-01,2025-01-01,0.16,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2025-02,2025-02-01,1.31,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2025-03,2025-03-01,0.56,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MACRO_IPCA,2025-04,2025-04-01,0.43,return_pct,bcb_sgs_433,2026-09-11T13:38:18+00:00,IPCA do mes
+MRFG3,2023-04,2023-04-28,6.473089218139648,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2023-05,2023-05-31,6.602352142333984,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2023-06,2023-06-30,7.2287797927856445,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2023-07,2023-07-31,7.377930164337158,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2023-08,2023-08-31,7.409999847412109,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2023-09,2023-09-29,7.130000114440918,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2023-10,2023-10-31,6.460000038146973,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2023-11,2023-11-30,9.720000267028809,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2023-12,2023-12-28,9.699999809265137,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2024-01,2024-01-31,9.40999984741211,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2024-02,2024-02-29,9.899999618530273,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2024-03,2024-03-28,10.3100004196167,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2024-04,2024-04-30,9.449999809265137,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2024-05,2024-05-31,11.279999732971191,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2024-06,2024-06-28,12.359999656677246,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2024-07,2024-07-31,11.3100004196167,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2024-08,2024-08-30,14.5600004196167,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2024-09,2024-09-30,13.640000343322754,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2024-10,2024-10-31,15.6899995803833,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2024-11,2024-11-29,18.770000457763672,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2024-12,2024-12-30,17.030000686645508,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2025-01,2025-01-31,15.890000343322754,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2025-02,2025-02-28,13.630000114440918,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2025-03,2025-03-31,18.059999465942383,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
+MRFG3,2025-04,2025-04-30,21.479999542236328,price,yfinance,2026-09-11T13:38:18+00:00,fechamento do ultimo pregao do mes
