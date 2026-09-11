@@ -33,6 +33,7 @@ TRIAGE = [("build_prices", "Preços"), ("compute_metrics", "Métricas"),
           ("recommend", "Regras"), ("rebalance", "Rebalanceamento"), ("figures", "Cifras")]
 LETTER = [("generate_letter", "Redação e verificação"), ("charts", "Gráficos"),
           ("render_pdf", "Documento")]
+RENDER = [("charts", "Gráficos"), ("render_pdf", "Documento")]
 
 st.set_page_config(page_title="Relatórios mensais — XP", page_icon="📄", layout="wide")
 
@@ -215,8 +216,17 @@ if pdf_p.exists() or html_p.exists():
         cols[0].download_button("Baixar PDF", pdf_p.read_bytes(),
                                 f"relatorio_{cid.lower()}.pdf", "application/pdf",
                                 use_container_width=True)
-    else:
-        cols[0].warning("PDF indisponível neste ambiente — use o HTML e imprima pelo navegador.")
+    elif cols[0].button("Gerar PDF", use_container_width=True):
+        # Re-runs only the rendering stages: the letter text is already written
+        # and verified, so this never calls the model and costs nothing.
+        log = st.expander("Registro da renderização", expanded=True)
+        failed = run(RENDER, cid, log=log)
+        if failed:
+            st.warning("Não foi possível gerar o PDF neste ambiente. "
+                       "Use o HTML e imprima pelo navegador (Ctrl+P → Salvar como PDF): "
+                       "o template já traz as regras de impressão em A4.")
+        else:
+            st.rerun()
     if html_p.exists():
         cols[1].download_button("Baixar HTML", html_p.read_bytes(),
                                 f"relatorio_{cid.lower()}.html", "text/html",
