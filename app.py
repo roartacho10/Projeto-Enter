@@ -38,11 +38,19 @@ ACTIVE = os.environ.get("DEMO_CLIENT", "ALBERT")   # the one case this build run
 DEFAULT_MODEL = "gpt-4.1"
 MODELS = ["gpt-4.1", "gpt-4.1-mini", "gpt-4o"]
 
-st.set_page_config(page_title="Relatórios mensais · XP", page_icon="📄", layout="wide")
+st.set_page_config(page_title="Relatórios mensais · XP", page_icon="📄", layout="wide",
+                   initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
-  #MainMenu, footer, header {visibility: hidden;}
+  /* Hide the chrome, NOT the header: the control that re-opens a collapsed
+     sidebar lives inside it, so hiding the header traps the user with no way
+     back to the settings. Toolbar and menu go; the collapse control stays. */
+  #MainMenu, footer {visibility: hidden;}
+  [data-testid="stToolbar"] {visibility: hidden; height: 0;}
+  [data-testid="stDecoration"] {display: none;}
+  [data-testid="stSidebarCollapseButton"],
+  [data-testid="stSidebarCollapsedControl"] {visibility: visible !important;}
   .block-container {padding-top: 1.2rem; max-width: 1150px;}
   .band {background:#231F20; margin:0 0 1.4rem; padding:1.1rem 1.6rem; border-radius:6px;
          display:flex; align-items:center; justify-content:space-between;}
@@ -195,11 +203,12 @@ with st.sidebar:
         st.caption(f"Chave da OpenAI: configurada ({key_src}).")
         with st.expander("Usar outra chave"):
             override = st.text_input("Chave da OpenAI", type="password", placeholder="sk-...",
-                                     label_visibility="collapsed",
+                                     label_visibility="collapsed", key="key_override",
                                      help="Vale só para esta sessão do navegador.")
             key = override or key
     else:
         key = st.text_input("Chave da OpenAI", type="password", placeholder="sk-...",
+                            key="key_sidebar",
                             help="Para não precisar digitar de novo, configure "
                                  "OPENAI_API_KEY no ambiente ou em .streamlit/secrets.toml.")
 
@@ -338,6 +347,7 @@ if hist:
 
 # ---------------------------------------------------------------- letter
 st.markdown('<p class="sectitle">Relatório do cliente</p>', unsafe_allow_html=True)
+
 pdf_p, html_p = OUT / cid / "letter.pdf", OUT / cid / "letter.html"
 a = st.columns([2, 1, 1])
 
