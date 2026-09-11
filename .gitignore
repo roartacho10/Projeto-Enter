@@ -3,6 +3,9 @@
 # when these are absent.
 CSVs exportados CVM/
 data/raw/cvm/
+# Annual CVM archives fetch_history.py caches while it works. The small extract
+# it produces (data/raw/history_extract/) IS versioned - that is the point.
+data/raw/_cvm_cache/
 
 # Generated on every run
 output/
