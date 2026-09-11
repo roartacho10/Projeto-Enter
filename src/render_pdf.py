@@ -11,6 +11,7 @@ Run: python src/render_pdf.py
 from __future__ import annotations
 from pathlib import Path
 import json
+import os
 import sys
 import base64
 import pandas as pd
@@ -140,27 +141,48 @@ if __name__ == "__main__":
                  f"Rode generate_letter.py antes.")
     html = build_html()
     (OUT / "letter.html").write_text(html, encoding="utf-8")
-    # The HTML is the source of truth; the PDF is a rendering of it. Where no
-    # browser is available (a hosted environment, say) the letter still exists
-    # and can be printed from the browser - but the layout gate cannot run, and
-    # that is said out loud rather than passed over in silence.
+    # The HTML is the source of truth; the PDF is a rendering of it. Three ways
+    # to get a browser, tried in order: Playwright's own download, a browser
+    # installed by the system (which is how this works on a host that forbids
+    # the download - see packages.txt), or none, in which case the letter still
+    # exists as HTML and the run says the layout gate did not execute.
+    SYSTEM_BROWSERS = [
+        "/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable", os.environ.get("CHROME_PATH", ""),
+    ]
+
+    def launch(pw):
+        try:
+            return pw.chromium.launch(), "navegador do playwright"
+        except Exception:
+            pass
+        for exe in SYSTEM_BROWSERS:
+            if exe and Path(exe).exists():
+                try:
+                    return pw.chromium.launch(executable_path=exe), f"navegador do sistema ({exe})"
+                except Exception:
+                    continue
+        return None, None
+
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
         print("AVISO: playwright ausente - PDF nao gerado e portao de layout nao executado.")
         print(f"html -> {OUT / 'letter.html'}")
+        (OUT / "letter.html").write_text(build_html(), encoding="utf-8")
         sys.exit(0)
-    try:
-        pw = sync_playwright().start()
-        pw.stop()
-    except Exception as e:
-        print(f"AVISO: navegador indisponivel ({type(e).__name__}) - PDF nao gerado "
-              "e portao de layout nao executado. Rode: python -m playwright install chromium")
-        print(f"html -> {OUT / 'letter.html'}")
-        sys.exit(0)
+
     chosen, overflow = None, None
     with sync_playwright() as p:
-        b = p.chromium.launch()
+        b, how = launch(p)
+        if b is None:
+            (OUT / "letter.html").write_text(build_html(), encoding="utf-8")
+            print("AVISO: nenhum navegador disponivel - PDF nao gerado e portao de "
+                  "layout nao executado. Instale um Chromium do sistema (packages.txt) "
+                  "ou rode: python -m playwright install chromium")
+            print(f"html -> {OUT / 'letter.html'}")
+            sys.exit(0)
+        print(f"  usando {how}")
         pg = b.new_page()
         for fit, annex, label in FIT_STEPS:
             html = build_html(fit, annex)
