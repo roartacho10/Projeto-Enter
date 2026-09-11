@@ -82,8 +82,14 @@ writes the rows it used to `data/raw/cvm_extract/fund_quotas.csv` (~20 KB); a
 run without them reads that extract instead and says so in the data-quality
 log. The numbers are identical — the answer-key validation passes either way.
 
-If Chromium is unavailable, the PDF step is skipped, the HTML letter is still
-produced, and the run reports that the layout gate did not execute.
+PDF rendering needs a browser. `render_pdf.py` tries three in order: the one
+Playwright downloads, one installed by the system, then none. On a host that
+forbids the download, `packages.txt` asks for a system Chromium — that file is
+consumed line by line by the system package installer and **must contain
+nothing but package names**, no comments. If no browser is available the HTML
+letter is still produced and the run reports that the layout gate did not run;
+the template carries A4 print rules, so the browser's own "save as PDF"
+produces the same two pages.
 
 ## What this deliberately does not do
 
