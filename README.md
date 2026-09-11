@@ -37,8 +37,12 @@ The design rule the whole thing is built around:
 ## Requirements
 
 - Python 3.13 (tested on 3.13.14)
-- An OpenAI API key, provided through the `OPENAI_API_KEY` environment variable
-  or the app's sidebar. **Never commit a key.**
+- An OpenAI API key. The app looks for it in `.streamlit/secrets.toml` (see
+  `.streamlit/secrets.toml.example`), then in the `OPENAI_API_KEY` environment
+  variable, and only asks in the sidebar if neither is set. On Streamlit
+  Community Cloud, put it in Settings > Secrets. `MODEL_LETTER` sets the drafting
+  model the same way; it defaults to `gpt-4.1`. **Never commit a key** - both
+  locations are gitignored, and `check_repo.py` fails the build if one slips in.
 
 ```bash
 pip install -r requirements.txt
