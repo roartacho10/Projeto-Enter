@@ -50,7 +50,10 @@ st.markdown("""
      back, is a CHILD of that toolbar and inherits the hidden visibility. Two
      earlier attempts failed exactly there, so it is un-hidden explicitly. */
   #MainMenu, footer {visibility: hidden;}
-  [data-testid="stHeader"] {background: transparent; height: 0; min-height: 0;}
+  [data-testid="stHeader"] {background: transparent;}   /* transparente, NAO height:0 -
+     o header e um overlay e nao empurra conteudo; zera-lo levava o botao de
+     expandir para top=-14px, cortado pela metade. Medido: 16px com esta regra,
+     a mesma altura do botao de recolher quando a lateral esta aberta. */
   [data-testid="stToolbar"] {visibility: hidden; height: 0;}
   [data-testid="stExpandSidebarButton"],
   [data-testid="stExpandSidebarButton"] * {visibility: visible !important;}
