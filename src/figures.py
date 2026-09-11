@@ -17,7 +17,10 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from contracts import MetricsPack, RecommendationSet  # noqa: E402
 
-from context import OUT, REF  # noqa: E402
+from context import OUT, REF, policy_path  # noqa: E402
+
+
+FIRST_MACRO_YEAR = 2025   # 2024 in the report is a closed year, not a forecast
 
 
 def money(v: float) -> str:
@@ -84,17 +87,24 @@ def build() -> dict[str, str]:
             tag = t.instrument_id or "destino"
             f[f"trade_{i}_{t.action}_{tag}"] = money(t.amount_brl)
 
-    # Curated macro projections. Table figures do not survive PDF-to-text
-    # extraction intact, so these nine are read and checked by a human and
-    # carry the section of the report they come from.
-    mp = REF / "macro_figures.csv"
+    # Macro projections, extracted from the report by src/extract_macro.py.
+    # The projections TABLE is the authority. Where the report's own narrative
+    # states a different number - it does, twice, for gross debt - the extractor
+    # records the divergence and keeps the table's value, so the only macro
+    # figure the letter can quote is the published one.
+    mp = REF / "macro_projections.csv"
     if mp.exists():
         for row in _csv.DictReader(mp.open(encoding="utf-8")):
-            f[f"macro_{row['figure_id']}"] = row["value"]
+            if row["is_projection"] != "True" or int(row["year"]) < FIRST_MACRO_YEAR:
+                continue
+            if not row["unit"]:          # rows without a stable id stay unpublished
+                continue
+            suffix = "" if row["unit"] == "R$/US$" else "%"
+            f[f"macro_{row['variable_id']}_{row['year']}"] = row["value_raw"] + suffix
 
     # Policy limits are declared numbers too: without them the letter can only
     # say "above the recommended limit", which tells the client less.
-    pp_ = REF / "suitability_policy.csv"
+    pp_ = policy_path()
     if pp_.exists():
         for row in _csv.DictReader(pp_.open(encoding="utf-8")):
             t = row["threshold"]

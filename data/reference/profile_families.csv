@@ -1,0 +1,28 @@
+risk_class,risk_category,allowed,note
+Conservador,cash,1,
+Conservador,fixed_income_bank,1,
+Conservador,fixed_income_fund,1,
+Conservador,credit_fund,0,
+Conservador,equity_direct,0,
+Conservador,equity_fund,0,
+Conservador,long_biased_fund,0,
+Conservador,multimarket_macro,0,
+Conservador,fidc_senior,0,
+Moderado,cash,1,
+Moderado,fixed_income_bank,1,
+Moderado,fixed_income_fund,1,
+Moderado,credit_fund,1,
+Moderado,equity_direct,1,"Acoes de empresas consolidadas: e a familia que o mandato moderado admite diretamente."
+Moderado,equity_fund,1,"Fundo de acoes e o mesmo risco da acao direta num involucro coletivo."
+Moderado,long_biased_fund,0,"Pode alavancar e vender a descoberto: risco de natureza diferente do que a acao direta carrega."
+Moderado,multimarket_macro,0,"Mandato amplo e discricionario, sem exposicao declarada de antemao."
+Moderado,fidc_senior,0,"Credito estruturado: risco de credito e de liquidez distintos da renda fixa bancaria e soberana."
+Arrojado,cash,1,
+Arrojado,fixed_income_bank,1,
+Arrojado,fixed_income_fund,1,
+Arrojado,credit_fund,1,
+Arrojado,equity_direct,1,
+Arrojado,equity_fund,1,
+Arrojado,long_biased_fund,1,
+Arrojado,multimarket_macro,1,
+Arrojado,fidc_senior,1,

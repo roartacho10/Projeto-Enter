@@ -1,5 +1,5 @@
 client_id,name,profile,account,advisor,advisor_code,period
 ALBERT,Albert da Silva,Moderado,792854,Antonio Bicudo,A7699,2025-04
-BEATRIZ,Beatriz Nogueira,Moderado,814207,Antonio Bicudo,A7699,2025-04
-CARLOS,Carlos Menezes,Moderado,903115,Antonio Bicudo,A7699,2025-04
-DANIELA,Daniela Prado,Moderado,771620,Antonio Bicudo,A7699,2025-04
+BEATRIZ,Beatriz Nogueira,Moderado,,Antonio Bicudo,A7699,2025-04
+CARLOS,Carlos Menezes,Moderado,,Antonio Bicudo,A7699,2025-04
+DANIELA,Daniela Prado,Moderado,,Antonio Bicudo,A7699,2025-04

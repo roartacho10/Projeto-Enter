@@ -1,0 +1,5 @@
+client_id,document,risk_class,risk_class_quote,objective,objective_quote,horizon,horizon_quote,horizon_ambiguous,note
+ALBERT,risk_profile.txt,Moderado,Classificação do Perfil de Investimento: Moderado 1,poder_de_compra,O foco do investidor é preservar seu poder de compra e incrementá-lo marginalmente,Medio,perspectivas de rendimento a médio e longo prazo,True,"O documento abrange Medio e Longo. Adotado o mais curto (Medio): horizonte menor gera restricao mais apertada, entao o erro fica do lado seguro."
+BEATRIZ,,Moderado,,,,,,False,Sem documento de perfil. Classificacao vinda do cadastro; objetivo e horizonte nao definidos.
+CARLOS,,Moderado,,,,,,False,Sem documento de perfil. Classificacao vinda do cadastro; objetivo e horizonte nao definidos.
+DANIELA,,Moderado,,,,,,False,Sem documento de perfil. Classificacao vinda do cadastro; objetivo e horizonte nao definidos.

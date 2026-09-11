@@ -1,0 +1,4 @@
+horizon,years,note
+Curto,1,"Equivalencia declarada. Horizonte curto: o cliente pode precisar do recurso dentro de um ano, entao a carteira precisa aguentar ser desmontada a qualquer momento."
+Medio,3,"Equivalencia declarada. Horizonte medio: ha folga para atravessar um ciclo, mas nao dois."
+Longo,5,"Equivalencia declarada. Horizonte longo: o cliente nao e forcado a vender numa queda, que e a razao operacional pela qual suporta mais oscilacao - nao porque o risco diminua com o tempo."

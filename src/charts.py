@@ -12,6 +12,7 @@ Design decisions worth defending:
 Run: python src/charts.py
 """
 from __future__ import annotations
+from datetime import date
 from pathlib import Path
 import sys
 import matplotlib
@@ -60,6 +61,32 @@ def frame(ax):
     ax.grid(False)
 
 
+IDLE = "Capital ocioso"
+
+
+def bucket_of(iid: str, ins: pd.DataFrame, cats: pd.DataFrame, period_end) -> str:
+    """
+    Which slice of the allocation chart a holding belongs to.
+
+    Idle capital is a STATE, not a product family. A bank CD earning CDI and a
+    bank CD that matured eight months ago share a risk_category and belong in
+    different buckets, so the maturity date decides, not the label. The
+    category table used to send every fixed_income_bank holding to the idle
+    bucket, which was right for the one matured CD in front of it and wrong for
+    every live one - including the post-fixed paper this system's own buy order
+    points at. Executing the plan would have redrawn the money as still idle.
+    """
+    row = ins.loc[iid]
+    md = str(row.get("maturity_date", "") or "").strip()
+    if md and md != "nan":
+        try:
+            if date.fromisoformat(md) < period_end:
+                return IDLE
+        except ValueError:
+            pass
+    return cats.loc[row["risk_category"], "letter_bucket"]
+
+
 def allocation_chart(pack: MetricsPack, ins: pd.DataFrame, cats: pd.DataFrame) -> Path:
     """
     Part-to-whole, so a stacked bar rather than a pie: it is the recommended form
@@ -70,14 +97,12 @@ def allocation_chart(pack: MetricsPack, ins: pd.DataFrame, cats: pd.DataFrame) -
     because it is the point of the letter; colour is not doing identity work, the
     labels are.
     """
-    rows = []
-    for m in pack.positions:
-        cat = ins.loc[m.instrument_id, "risk_category"]
-        rows.append((cats.loc[cat, "letter_bucket"], m.value_end))
+    rows = [(bucket_of(m.instrument_id, ins, cats, pack.period_end), m.value_end)
+            for m in pack.positions]
     df = (pd.DataFrame(rows, columns=["bucket", "v"]).groupby("bucket", as_index=False)
           .sum().sort_values("v", ascending=False))
     total = df["v"].sum()
-    shade = {"Capital ocioso": "#1A1A1A", "Renda variável": "#6E6E6E",
+    shade = {IDLE: "#1A1A1A", "Renda variável": "#6E6E6E",
              "Crédito privado e renda fixa": "#A8A8A8", "Multimercado": "#CFCFCF"}
 
     fig, ax = plt.subplots(figsize=(6.0, 1.44), dpi=200)

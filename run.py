@@ -26,10 +26,13 @@ SRC = ROOT / "src"
 
 # "shared" stages price the whole universe once, not once per client
 STAGES = [
+    ("extract_macro",   "Lê as projeções do relatório",    {"shared"}),
+    ("extract_profile", "Lê os perfis de risco",           {"shared"}),
     ("fetch_market",    "Baixa preços e séries macro",     {"fetch", "shared"}),
     ("fetch_history",   "Baixa 24 meses de histórico",     {"fetch", "shared"}),
     ("build_prices",    "Monta a tabela de preços",        {"shared"}),
     ("compute_metrics", "Calcula o MetricsPack",           set()),
+    ("derive_policy",   "Deriva os limites do perfil",     set()),
     ("recommend",       "Aplica as regras de suitability", set()),
     ("rebalance",       "Dimensiona compras e vendas",     set()),
     ("history",         "Monta a trajetória mensal",       set()),
@@ -59,8 +62,19 @@ def main() -> int:
     ap.add_argument("--no-llm", action="store_true", help="pula a geração da carta")
     a = ap.parse_args()
 
-    clients = (pd.read_csv(ROOT / "data" / "reference" / "clients.csv", dtype=str)["client_id"]
-               .tolist() if a.all else [a.client])
+    roster = pd.read_csv(ROOT / "data" / "reference" / "clients.csv", dtype=str)["client_id"].tolist()
+    clients = roster if a.all else [a.client]
+    # Only clients with holdings have anything to compute. The others exist on
+    # the roster so the interface can show the book this was designed for.
+    held = set(pd.read_csv(ROOT / "data" / "reference" / "positions.csv",
+                           dtype=str)["client_id"])
+    skipped = [c for c in clients if c not in held]
+    clients = [c for c in clients if c in held]
+    if skipped:
+        print(f"(sem posicoes, fora desta execucao: {', '.join(skipped)})")
+    if not clients:
+        print("Nenhum cliente com posicoes.")
+        return 1
 
     def wanted(tags):
         return not (("fetch" in tags and not a.fetch) or ("llm" in tags and a.no_llm))

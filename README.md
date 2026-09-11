@@ -19,7 +19,12 @@ The design rule the whole thing is built around:
 
 1. **Ingests** prices from three public sources: CVM (fund quotas, daily and
    FIDC monthly), B3 via Yahoo (equities and the Ibovespa) and the Brazilian
-   Central Bank (CDI, Selic, IPCA).
+   Central Bank (CDI, Selic, IPCA), and reads the house macro report's
+   projections table deterministically - no model involved. The table is
+   printed twice in that document and both copies must agree; figures the
+   report's own narrative restates are checked against it, and the **table is
+   the authority**. Where the two disagree the divergence is recorded and the
+   table's value is what the letter is allowed to quote.
 2. **Computes** the month's return, per-position attribution, look-through
    equity exposure and a declared benchmark — all in code, validated against a
    hand-checked answer key.

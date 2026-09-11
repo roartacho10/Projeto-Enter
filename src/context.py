@@ -26,3 +26,13 @@ def clients() -> pd.DataFrame:
 
 def client(cid: str | None = None) -> pd.Series:
     return clients().loc[cid or CLIENT_ID]
+
+
+def policy_path() -> Path:
+    """
+    The client's own derived policy when there is one, the shared file when
+    there is not. A client with no risk-profile document falls back to generic
+    limits rather than silently borrowing another client's.
+    """
+    own = OUT / "suitability_policy.csv"
+    return own if own.exists() else REF / "suitability_policy.csv"

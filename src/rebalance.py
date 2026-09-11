@@ -23,13 +23,13 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from contracts import MetricsPack, RebalancePlan, Trade  # noqa: E402
 
-from context import OUT, REF  # noqa: E402
+from context import OUT, REF, policy_path  # noqa: E402
 RUN_ID = datetime.now(timezone.utc).strftime("run_%Y%m%dT%H%M%SZ")
 
 pack = MetricsPack.model_validate_json((OUT / "metrics_pack.json").read_text(encoding="utf-8"))
 ins = pd.read_csv(REF / "instruments.csv", dtype=str).fillna("").set_index("instrument_id")
 cats = pd.read_csv(REF / "risk_categories.csv", dtype=str).fillna("").set_index("risk_category")
-pol = pd.read_csv(REF / "suitability_policy.csv", dtype=str).set_index("rule_id")
+pol = pd.read_csv(policy_path(), dtype=str).fillna("").set_index("rule_id")
 rpol = pd.read_csv(REF / "rebalance_policy.csv", dtype=str).set_index("param")
 
 MAX_EQUITY = float(pol.loc["MAX_EQUITY_LOOKTHROUGH_PCT", "threshold"])

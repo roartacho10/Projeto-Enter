@@ -5,8 +5,7 @@ long_biased_fund,1,Fundo long biased: risco de renda variavel,Renda variável
 multimarket_macro,0,Multimercado macro: nao classificado como renda variavel,Multimercado
 credit_fund,0,Credito privado,Crédito privado e renda fixa
 fixed_income_fund,0,Renda fixa,Crédito privado e renda fixa
-fidc,0,Direitos creditorios,Crédito privado e renda fixa
-fixed_income_bank,0,Bancario,Capital ocioso
+fixed_income_bank,0,"Bancario. O balde da carta NAO vem desta coluna para esta familia: vencido vai para Capital ocioso, vivo vai para renda fixa. Quem decide e a data de vencimento, em charts.bucket_of.",Crédito privado e renda fixa
 fidc_senior,0,Cota senior de FIDC,Crédito privado e renda fixa
 cash,0,Caixa,Capital ocioso
 benchmark,0,Nao e posicao,

@@ -1,7 +1,8 @@
 """
 L3 - Suitability screens and recommendation engine.
 
-Rules live in data/reference/suitability_policy.csv, not in this file. The
+Rules live in a CSV, not in this file: the client's own derived policy when a
+risk-profile document produced one, the shared defaults otherwise. The
 engine measures, compares against the declared threshold, and emits a
 Recommendation carrying the observed fact, the limit it breached and the
 clause of the client's profile document it comes from.
@@ -20,7 +21,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from contracts import MetricsPack, Recommendation, RecommendationSet  # noqa: E402
 
-from context import CLIENT_ID, OUT, REF, client  # noqa: E402
+from context import CLIENT_ID, OUT, REF, client, policy_path  # noqa: E402
 
 _c = client()
 CLIENT, PROFILE = CLIENT_ID, _c["profile"]
@@ -28,7 +29,7 @@ RUN_ID = datetime.now(timezone.utc).strftime("run_%Y%m%dT%H%M%SZ")
 
 pack = MetricsPack.model_validate_json((OUT / "metrics_pack.json").read_text(encoding="utf-8"))
 instruments = pd.read_csv(REF / "instruments.csv", dtype=str).fillna("").set_index("instrument_id")
-policy = pd.read_csv(REF / "suitability_policy.csv", dtype=str).set_index("rule_id")
+policy = pd.read_csv(policy_path(), dtype=str).fillna("").set_index("rule_id")
 riskcat = pd.read_csv(REF / "risk_categories.csv", dtype=str).set_index("risk_category")
 
 pos = {m.instrument_id: m for m in pack.positions}
@@ -102,14 +103,17 @@ for m in sorted(pack.positions, key=lambda x: -x.value_end):
             obs_pct=round(p, 2))
 
 # --- 5. restricted categories
-pref = rule("RESTRICTED_CATEGORY_FIDC")["threshold"]
+# The blocked families are derived from the client's classification, not read
+# as a list of products out of the profile document - see src/derive_policy.py.
+_rid = "RESTRICTED_CATEGORY" if "RESTRICTED_CATEGORY" in policy.index else "RESTRICTED_CATEGORY_FIDC"
+blocked = {c for c in str(rule(_rid)["threshold"]).split("|") if c}
 for m in pack.positions:
-    if instruments.loc[m.instrument_id, "risk_category"].startswith(pref):
-        add("RESTRICTED_CATEGORY_FIDC", "review",
+    if instruments.loc[m.instrument_id, "risk_category"] in blocked:
+        add(_rid, "review",
             f"{instruments.loc[m.instrument_id, 'statement_name']} e um "
             f"{instruments.loc[m.instrument_id, 'risk_category']} "
             f"({m.value_end / invested * 100:.1f}% do investido)",
-            "renda fixa com rating BB+ ou superior", "", m.instrument_id,
+            "familia compativel com o mandato", "", m.instrument_id,
             round(m.value_end, 2), obs_pct=round(m.value_end / invested * 100, 2))
 
 idle = pack.cash_value + sum(

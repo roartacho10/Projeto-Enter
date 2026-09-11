@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parent
 SRC, OUT, REF, ASSETS = ROOT / "src", ROOT / "output", ROOT / "data" / "reference", ROOT / "assets"
 
 TRIAGE = [("build_prices", "Atualizando preços"), ("compute_metrics", "Calculando resultados"),
+          ("derive_policy", "Derivando os limites do perfil"),
           ("recommend", "Aplicando regras de adequação"),
           ("rebalance", "Dimensionando ajustes"), ("figures", "Preparando os números")]
 LETTER = [("generate_letter", "Redigindo e verificando"), ("charts", "Desenhando gráficos"),
@@ -290,8 +291,14 @@ else:
             "Ativo ou destino": t["instrument_id"] or f"{t['category']} — {t['criteria']}",
             "Valor": brl(t["amount_brl"])} for t in plan["trades"]]),
             width="stretch", hide_index=True)
-        st.caption(f"Estes ajustes resolvem os {len(plan['violations_before'])} pontos de "
-                   f"atenção acima. Caixa após: {brl(plan['cash_after_brl'])}.")
+        n_fix, n_all = len(plan["violations_before"]), len(rec["recommendations"]) if rec else 0
+        resto = max(n_all - n_fix, 0)
+        st.caption(
+            f"Estes ajustes resolvem {n_fix} dos {n_all} pontos de atenção. "
+            + (f"Os {resto} restantes são de enquadramento de família: o sistema os aponta "
+               f"mas não emite ordem, porque escolher o substituto exige uma fonte de "
+               f"research que ele não tem. " if resto else "")
+            + f"Caixa após: {brl(plan['cash_after_brl'])}.")
 
 # ---------------------------------------------------------------- history
 hist = load(cid, "history.json")

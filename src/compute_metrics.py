@@ -39,6 +39,11 @@ con.close()
 instruments = pd.read_csv(REF / "instruments.csv", dtype={"cnpj": str}).fillna("").set_index("instrument_id")
 positions = pd.read_csv(REF / "positions.csv").fillna("")
 positions = positions[positions["client_id"] == CLIENT]
+if positions.empty:
+    # A client on the roster with no holdings is a precondition failure, not a
+    # portfolio worth zero. Say which, rather than dividing by it.
+    print(f"\nFALHOU: {CLIENT} nao tem nenhuma posicao em data/reference/positions.csv.")
+    sys.exit(1)
 
 
 def price_on(iid: str, day: str) -> float | None:
