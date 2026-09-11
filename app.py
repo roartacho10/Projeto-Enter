@@ -24,6 +24,7 @@ import subprocess
 import sys
 import pandas as pd
 import streamlit as st
+from streamlit.components.v1 import html as st_html
 
 ROOT = Path(__file__).resolve().parent
 SRC, OUT, REF = ROOT / "src", ROOT / "output", ROOT / "data" / "reference"
@@ -75,20 +76,26 @@ def load(cid: str, name: str):
 
 
 def queue() -> pd.DataFrame:
+    """
+    One row per client, always with the same columns. A client with no metrics
+    yet gets empty cells rather than a shorter row: a partially populated queue
+    is the normal state on a fresh install, and the table must survive it.
+    """
+    cols = ["Cliente", "_id", "Perfil", "Patrimônio", "Retorno", "Caixa %", "Achados", "Carta"]
     rows = []
     for _, c in clients().iterrows():
         cid = c["client_id"]
+        row = dict.fromkeys(cols)
+        row |= {"Cliente": c["name"], "_id": cid, "Perfil": c["profile"],
+                "Carta": "pronta" if (OUT / cid / "letter.pdf").exists() else "pendente"}
         pack, rec = load(cid, "metrics_pack.json"), load(cid, "recommendations.json")
-        if not pack:
-            rows.append({"Cliente": c["name"], "_id": cid, "Achados": None}); continue
-        rows.append({
-            "Cliente": c["name"], "_id": cid, "Perfil": c["profile"],
-            "Patrimônio": pack["total_value_end"], "Retorno": pack["total_return_pct"],
-            "Caixa %": pack["cash_pct_of_total"],
-            "Achados": len(rec["recommendations"]) if rec else 0,
-            "Carta": "pronta" if (OUT / cid / "letter.pdf").exists() else "pendente",
-        })
-    df = pd.DataFrame(rows)
+        if pack:
+            row |= {"Patrimônio": pack["total_value_end"],
+                    "Retorno": pack["total_return_pct"],
+                    "Caixa %": pack["cash_pct_of_total"],
+                    "Achados": len(rec["recommendations"]) if rec else 0}
+        rows.append(row)
+    df = pd.DataFrame(rows, columns=cols)
     return df.sort_values(["Achados", "Caixa %"], ascending=False, na_position="last")
 
 
@@ -215,4 +222,4 @@ if pdf_p.exists() or html_p.exists():
                                 f"relatorio_{cid.lower()}.html", "text/html",
                                 use_container_width=True)
         with st.expander("Pré-visualizar", expanded=not pdf_p.exists()):
-            st.components.v1.html(html_p.read_text(encoding="utf-8"), height=900, scrolling=True)
+            st_html(html_p.read_text(encoding="utf-8"), height=900, scrolling=True)
