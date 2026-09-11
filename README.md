@@ -65,6 +65,36 @@ Or the advisor interface:
 streamlit run app.py
 ```
 
+### Twenty-four months of history
+
+The monthly trajectory of each holding comes from its own collector, because the
+cost is different in kind: equity closes and the Bacen series are two API calls,
+while CVM publishes fund quotas only inside the whole month's informe, so one
+bulk download per month.
+
+```bash
+python src/fetch_history.py             # everything missing (~20 CVM months)
+python src/fetch_history.py --no-cvm    # equities and macro only, no bulk downloads
+```
+
+Anything already on disk wins over the network, zipped or not: drop
+`inf_diario_fi_202401.zip` into `CSVs exportados CVM/` (or `data/raw/cvm/`) and
+that month is read straight out of the archive, no unzipping. That is the manual
+fallback when a download fails.
+
+It is resumable - months already in the extract are skipped, so an interrupted
+run costs nothing - and it keeps no archive: each month is read for the handful
+of rows the holdings need and then discarded. What survives is
+`data/raw/history_extract/monthly_series.csv`, a few KB, versioned, and enough
+for `src/history.py` to rebuild every trajectory on a host with no network.
+
+Two holdings cannot have a full series and the report says so on the page rather
+than papering over it: the Brave FIDC only appears in CVM's FIDC informe from its
+November 2024 re-registration, and the C6 CDB matured in September 2024 and is
+carried at the statement's value. Quantities are held constant across the window
+- no contributions or withdrawals - which is an assumption, printed as one.
+
+
 ## Layout
 
 ```
