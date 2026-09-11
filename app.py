@@ -33,6 +33,7 @@ TRIAGE = [("build_prices", "Atualizando preços"), ("compute_metrics", "Calculan
 LETTER = [("generate_letter", "Redigindo e verificando"), ("charts", "Desenhando gráficos"),
           ("render_pdf", "Montando o documento")]
 RENDER = [("charts", "Desenhando gráficos"), ("render_pdf", "Montando o documento")]
+ACTIVE = os.environ.get("DEMO_CLIENT", "ALBERT")   # the one case this build runs
 DEFAULT_MODEL = "gpt-4.1"
 MODELS = ["gpt-4.1", "gpt-4.1-mini", "gpt-4o"]
 
@@ -53,8 +54,13 @@ st.markdown("""
          margin-bottom:.45rem;}
   .card.sel {background:#fff; border-color:#DCDCDA; border-top-color:#FFC700;
              box-shadow:0 1px 5px rgba(0,0,0,.07);}
+  .card.ghost {background:#FAFAF9; border-color:#EFEFED; border-top-color:#EFEFED;
+               opacity:.45; filter:grayscale(1); user-select:none;}
   .card .nm {font-weight:600; font-size:.95rem; margin:0 0 .1rem; line-height:1.25;}
   .card .pf {color:#7A7A7A; font-size:.78rem; margin:0 0 .55rem;}
+  .ghostnote {font-size:.7rem; letter-spacing:.06em; text-transform:uppercase;
+              color:#B0B0AE; margin:.1rem 0 0; text-align:center;}
+  .ghostnote.sel {color:#8A7A36; font-weight:600;}
   .chip {display:inline-block; padding:.12rem .55rem; border-radius:999px;
          font-size:.74rem; font-weight:600; white-space:nowrap;}
   .chip.ok   {background:#E8F3EC; color:#1E6B3A;}
@@ -67,6 +73,8 @@ st.markdown("""
             margin:.35rem 0; font-size:.88rem;}
   .finding b {display:block;}
   .finding span {color:#6B6B6B; font-size:.8rem;}
+  .chart {margin:.5rem 0 .3rem;}
+  .chart svg {width:100%; height:auto; max-width:900px;}
   div[data-testid="stMetricValue"] {font-size:1.35rem;}
 </style>
 """, unsafe_allow_html=True)
@@ -146,22 +154,26 @@ def chip(n) -> str:
 
 
 def queue() -> pd.DataFrame:
+    """One row per client. Only the active one is priced - see the note below."""
     cols = ["Cliente", "_id", "Perfil", "Patrimônio", "Retorno", "Caixa", "Achados", "Carta"]
     rows = []
     for _, c in clients().iterrows():
         cid = c["client_id"]
         row = dict.fromkeys(cols)
-        row |= {"Cliente": c["name"], "_id": cid, "Perfil": c["profile"],
-                "Carta": (OUT / cid / "letter.pdf").exists()
-                or (OUT / cid / "letter.html").exists()}
-        pack, rec = load(cid, "metrics_pack.json"), load(cid, "recommendations.json")
-        if pack:
-            row |= {"Patrimônio": pack["total_value_end"], "Retorno": pack["total_return_pct"],
-                    "Caixa": pack["cash_pct_of_total"],
-                    "Achados": len(rec["recommendations"]) if rec else 0}
+        row |= {"Cliente": c["name"], "_id": cid, "Perfil": c["profile"], "Carta": False}
+        if cid == ACTIVE:
+            row["Carta"] = ((OUT / cid / "letter.pdf").exists()
+                            or (OUT / cid / "letter.html").exists())
+            pack, rec = load(cid, "metrics_pack.json"), load(cid, "recommendations.json")
+            if pack:
+                row |= {"Patrimônio": pack["total_value_end"],
+                        "Retorno": pack["total_return_pct"],
+                        "Caixa": pack["cash_pct_of_total"],
+                        "Achados": len(rec["recommendations"]) if rec else 0}
         rows.append(row)
-    return pd.DataFrame(rows, columns=cols).sort_values(
-        ["Achados", "Caixa"], ascending=False, na_position="last")
+    df = pd.DataFrame(rows, columns=cols)
+    df["_active"] = df["_id"] == ACTIVE
+    return df.sort_values(["_active", "Cliente"], ascending=[False, True])
 
 
 # ---------------------------------------------------------------- header
@@ -201,54 +213,50 @@ with st.sidebar:
                "cifra chega à carta sem constar da lista verificada.")
 
 q = queue()
-pend = q["Achados"].dropna()
+active = q[q["_active"]].iloc[0]
 
 # ---------------------------------------------------------------- client menu
 h = st.columns([3, 1])
 h[0].markdown('<p class="sectitle">Carteira de clientes</p>', unsafe_allow_html=True)
 with h[1]:
     st.write("")
-    if st.button("Atualizar carteira", width="stretch"):
-        for _, c in clients().iterrows():
-            failed, log = run(TRIAGE, c["client_id"])
-            if failed:
-                st.error(f"Falhou em {failed} para {c['name']}.")
-                st.session_state["log"] = log
-                st.stop()
+    if st.button("Atualizar dados", width="stretch"):
+        failed, log = run(TRIAGE, ACTIVE)
+        st.session_state["log"] = log
+        if failed:
+            st.error(f"Falhou em {failed}. Veja os detalhes técnicos ao final.")
+            st.stop()
         st.cache_data.clear()
         st.rerun()
 
-if pend.empty:
-    st.info("Nenhum cliente processado ainda. Use **Atualizar carteira** para revisar todos.")
-else:
-    st.caption(f"{len(pend)} clientes revisados · {int((pend > 0).sum())} pedem atenção · "
-               f"{int((pend == 0).sum())} em ordem. Selecione um cliente para ver o caso.")
-
-if "sel" not in st.session_state:
-    ids = list(q["_id"])
-    st.session_state["sel"] = "ALBERT" if "ALBERT" in ids else ids[0]
+st.caption("A plataforma foi desenhada para a carteira inteira do assessor — a triagem, "
+           "as regras e a carta rodam por cliente. Esta demonstração processa apenas o caso "
+           f"de {active['Cliente'].split()[0]}; os demais aparecem para mostrar a escala "
+           "pretendida.")
 
 cards = st.columns(len(q))
 for col, (_, r) in zip(cards, q.iterrows()):
-    cid_r = r["_id"]
-    is_sel = cid_r == st.session_state["sel"]
-    achados = int(r["Achados"]) if pd.notna(r["Achados"]) else None
-    valor = brl(r["Patrimônio"]) if pd.notna(r["Patrimônio"]) else "—"
     with col:
-        st.markdown(f'''<div class="card{" sel" if is_sel else ""}">
+        if not r["_active"]:
+            st.markdown(f'''<div class="card ghost">
+  <p class="nm">{r["Cliente"]}</p>
+  <p class="pf">{r["Perfil"]}</p>
+  <span class="chip none">não processado</span>
+</div>
+<p class="ghostnote">fora desta demonstração</p>''', unsafe_allow_html=True)
+            continue
+        achados = int(r["Achados"]) if pd.notna(r["Achados"]) else None
+        valor = brl(r["Patrimônio"]) if pd.notna(r["Patrimônio"]) else "—"
+        st.markdown(f'''<div class="card sel">
   <p class="nm">{r["Cliente"]}</p>
   <p class="pf">{r["Perfil"]} · {valor}</p>
   {chip(achados)}
-</div>''', unsafe_allow_html=True)
-        if st.button("Em análise" if is_sel else "Selecionar", key=f"sel_{cid_r}",
-                     type="primary" if is_sel else "secondary",
-                     disabled=is_sel, width="stretch"):
-            st.session_state["sel"] = cid_r
-            st.rerun()
+</div>
+<p class="ghostnote sel">em análise</p>''', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------- detail
-cid = st.session_state["sel"]
-name = clients().set_index("client_id").loc[cid, "name"]
+cid = ACTIVE
+name = active["Cliente"]
 st.markdown(f'<p class="sectitle">{name}</p>', unsafe_allow_html=True)
 
 pack, rec = load(cid, "metrics_pack.json"), load(cid, "recommendations.json")
@@ -284,6 +292,42 @@ else:
             width="stretch", hide_index=True)
         st.caption(f"Estes ajustes resolvem os {len(plan['violations_before'])} pontos de "
                    f"atenção acima. Caixa após: {brl(plan['cash_after_brl'])}.")
+
+# ---------------------------------------------------------------- history
+hist = load(cid, "history.json")
+if hist:
+    st.markdown('<p class="sectitle">Trajetória dos ativos</p>', unsafe_allow_html=True)
+    st.caption(hist["assumption"])
+    svg = OUT / cid / "charts" / "trajectory.svg"
+    if svg.exists():
+        st.markdown(f'<div class="chart">{svg.read_text(encoding="utf-8")}</div>',
+                    unsafe_allow_html=True)
+
+    pos = [s_ for s_ in hist["series"] if s_["kind"] == "position"]
+    short = [s_ for s_ in pos if not s_["complete"]]
+    if short or hist["excluded"]:
+        n = len(hist["excluded"])
+        st.caption(f"{len(pos)} posições com série publicada, {len(short)} delas com janela "
+                   f"incompleta{f'; {n} sem série nenhuma' if n else ''}. "
+                   f"Nada é interpolado — o detalhe está abaixo.")
+    with st.expander("Cobertura da série, ativo a ativo"):
+        st.dataframe(pd.DataFrame([{
+            "Ativo": s_["display_name"],
+            "Meses": f"{s_['months_covered']} de {hist['months_requested']}",
+            "De": s_["first_month"], "Até": s_["last_month"],
+            "No período": f"{s_['total_return_pct']:.2f}%".replace(".", ","),
+            "Base": {"quota_month_end": "cota de fim de mês",
+                     "close_month_end": "fechamento de fim de mês",
+                     "reported_monthly_return": "rentabilidade publicada"}.get(s_["basis"],
+                                                                               s_["basis"]),
+        } for s_ in pos]), width="stretch", hide_index=True)
+        for s_ in pos:
+            if s_["gap_note"]:
+                st.markdown(f'<div class="finding"><b>{s_["display_name"]}</b>'
+                            f'<span>{s_["gap_note"]}</span></div>', unsafe_allow_html=True)
+        for e in hist["excluded"]:
+            st.markdown(f'<div class="finding"><b>{e["display_name"]} — sem trajetória</b>'
+                        f'<span>{e["reason"]}</span></div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------- letter
 st.markdown('<p class="sectitle">Relatório do cliente</p>', unsafe_allow_html=True)
