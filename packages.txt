@@ -1,0 +1,5 @@
+# System packages installed by Streamlit Community Cloud before the app starts.
+# Playwright cannot download its own browser on this host, so render_pdf.py
+# falls back to this one. If it is unavailable the letter is still produced as
+# HTML and the run says the layout gate did not run.
+chromium
