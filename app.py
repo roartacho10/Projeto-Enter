@@ -75,16 +75,13 @@ st.markdown("""
                opacity:.45; filter:grayscale(1); user-select:none;}
   .card .nm {font-weight:600; font-size:.95rem; margin:0 0 .1rem; line-height:1.25;}
   .card .pf {color:#7A7A7A; font-size:.78rem; margin:0 0 .55rem;}
-  .ghostnote {font-size:.7rem; letter-spacing:.06em; text-transform:uppercase;
-              color:#B0B0AE; margin:.1rem 0 0; text-align:center;}
-  .ghostnote.sel {color:#8A7A36; font-weight:600;}
   .chip {display:inline-block; padding:.12rem .55rem; border-radius:999px;
          font-size:.74rem; font-weight:600; white-space:nowrap;}
   .chip.ok   {background:#E8F3EC; color:#1E6B3A;}
   .chip.warn {background:#FDF3D0; color:#7A5B00;}
   .chip.crit {background:#FBE9E7; color:#8C2F1E;}
   .chip.none {background:#F0F0EE; color:#6B6B6B;}
-  .sectitle {font-size:1.05rem; font-weight:700; margin:1.6rem 0 .4rem;
+  .sectitle {font-size:1.25rem; font-weight:700; margin:1.6rem 0 .4rem;
              padding-bottom:.35rem; border-bottom:1px solid #E4E4E2;}
   .finding {border-left:3px solid #FFC700; background:#FCFCFB; padding:.5rem .8rem;
             margin:.35rem 0; font-size:.88rem;}
@@ -326,30 +323,25 @@ with st.sidebar:
         model = st.selectbox("Modelo de redação", opts, index=0, label_visibility="collapsed")
 
     st.divider()
-    st.caption("Os números são calculados em código. O modelo apenas redige, e nenhuma "
-               "cifra chega à carta sem constar da lista verificada.")
+    atualizar = st.button("Atualizar dados", width="stretch")
+
+# The click is read in the sidebar but handled here, so the progress panel
+# opens in the main column instead of being squeezed into the sidebar. It also
+# runs before queue(), so the page is built from the numbers it just produced.
+if atualizar:
+    failed, log = run(TRIAGE, ACTIVE)
+    st.session_state["log"] = log
+    if failed:
+        st.error(f"Falhou em {failed}. Veja os detalhes técnicos ao final.")
+        st.stop()
+    st.cache_data.clear()
+    st.rerun()
 
 q = queue()
 active = q[q["_active"]].iloc[0]
 
 # ---------------------------------------------------------------- client menu
-h = st.columns([3, 1])
-h[0].markdown('<p class="sectitle">Carteira de clientes</p>', unsafe_allow_html=True)
-with h[1]:
-    st.write("")
-    if st.button("Atualizar dados", width="stretch"):
-        failed, log = run(TRIAGE, ACTIVE)
-        st.session_state["log"] = log
-        if failed:
-            st.error(f"Falhou em {failed}. Veja os detalhes técnicos ao final.")
-            st.stop()
-        st.cache_data.clear()
-        st.rerun()
-
-st.caption("A plataforma foi desenhada para a carteira inteira do assessor — a triagem, "
-           "as regras e a carta rodam por cliente. Esta demonstração processa apenas o caso "
-           f"de {active['Cliente'].split()[0]}; os demais aparecem para mostrar a escala "
-           "pretendida.")
+st.markdown('<p class="sectitle">Carteira de clientes</p>', unsafe_allow_html=True)
 
 cards = st.columns(len(q))
 for col, (_, r) in zip(cards, q.iterrows()):
@@ -359,8 +351,7 @@ for col, (_, r) in zip(cards, q.iterrows()):
   <p class="nm">{r["Cliente"]}</p>
   <p class="pf">{r["Perfil"]}</p>
   <span class="chip none">não processado</span>
-</div>
-<p class="ghostnote">fora desta demonstração</p>''', unsafe_allow_html=True)
+</div>''', unsafe_allow_html=True)
             continue
         achados = int(r["Achados"]) if pd.notna(r["Achados"]) else None
         valor = brl(r["Patrimônio"]) if pd.notna(r["Patrimônio"]) else "—"
@@ -368,13 +359,13 @@ for col, (_, r) in zip(cards, q.iterrows()):
   <p class="nm">{r["Cliente"]}</p>
   <p class="pf">{r["Perfil"]} · {valor}</p>
   {chip(achados)}
-</div>
-<p class="ghostnote sel">em análise</p>''', unsafe_allow_html=True)
+</div>''', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------- detail
+# No heading with the client's name: the selected card above already says
+# whose numbers these are, and repeating it read as a second selection.
 cid = ACTIVE
 name = active["Cliente"]
-st.markdown(f'<p class="sectitle">{name}</p>', unsafe_allow_html=True)
 
 pack, rec = current_pack(cid), load(cid, "recommendations.json")
 plan, rep = load(cid, "rebalance_plan.json"), load(cid, "verification_report.json")
