@@ -20,6 +20,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from contracts import MetricsPack  # noqa: E402
 from allocation import MODEL_VERSION, fingerprint
+from letter_content import normalize_sections
 
 from context import (OUT, ROOT, client, period_id, period_bounds,  # noqa: E402
                      period_label, br_date)
@@ -60,6 +61,7 @@ def build_html(fit: float = 1.0, show_annex: bool = True) -> str:
             or generation.get("figures_fingerprint") != fingerprint(figures)
             or generation.get("allocation_fingerprint") != allocation.get("fingerprint")):
         raise ValueError("Carta antiga ou reprovada: gere outra carta com os dados atuais antes de renderizar")
+    letter = normalize_sections(letter)
 
     kpi_rows = [
         {"label": "Patrimônio total", "a": brmoney(pack.total_value_start),

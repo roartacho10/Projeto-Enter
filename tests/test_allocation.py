@@ -173,7 +173,10 @@ class OpenAI:
     def __init__(self):
         self.chat = SimpleNamespace(completions=SimpleNamespace(create=self.create))
     def create(self, **kwargs):
-        content = json.dumps({"greeting": "Albert, valor inventado R$ 12.345,67."})
+        content = json.dumps({"greeting": "Albert, valor inventado R$ 12.345,67.",
+                              "highlights": ["Resumo."], "performance": "Resultado.",
+                              "macro": "Contexto.", "recommendations": ["Sugestões."],
+                              "coverage": "Cobertura.", "closing": "Até breve."})
         return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content))],
                                usage=SimpleNamespace(prompt_tokens=1, completion_tokens=1))
 ''', encoding="utf-8")

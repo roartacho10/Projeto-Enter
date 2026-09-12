@@ -23,6 +23,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from verify import verify  # noqa: E402
 from allocation import MODEL_VERSION, fingerprint
+from letter_content import parse_sections, flatten_sections
 
 try:
     from openai import OpenAI
@@ -166,8 +167,8 @@ similar-looking figure from elsewhere in the list: the percentages are measured
 against different bases and swapping them changes the meaning.
 {rec_block}
 
-PROPOSED REBALANCE from the same rule engine. Present these as the concrete next
-steps, with their amounts, in the recommendations section. Say plainly that sells
+PROPOSED REBALANCE from the same rule engine. Explain the concrete next
+steps without repeating amounts already printed in the table. Say plainly that sells
 name instruments while the purchase names a product family and a credit criterion,
 because the specific product is chosen with the client. Never claim that every
 suitability finding is cleared; any pending category reviews still need assessment:
@@ -197,55 +198,32 @@ generic - state the projections instead of describing them in adjectives:
 CLIENT RISK PROFILE (verbatim source document):
 {profile_raw[:4000]}
 
-OUTPUT FORMAT: reply with a single JSON object and nothing else. The document
-template supplies all headings, tables and charts, so write prose only - no
-headings, no bullets, no markdown, no figures beyond the authorised ones.
+OUTPUT FORMAT: reply with a single valid JSON object and nothing else.
+Use exactly the keys and types below. Both highlights and recommendations MUST
+be arrays of strings, never a single string or an object. All other fields MUST
+be nonempty strings. Escape quotation marks and line breaks inside JSON strings.
+Replace the English placeholders with concise Brazilian Portuguese prose.
+The template supplies headings, tables and charts; do not include markdown.
 
 {{
-  "highlights": [three one-sentence takeaways, the three things the client must not
-                 miss; each may contain authorised figures],
-  "greeting":   "one short paragraph: purpose of the letter, addressed to the client by first name",
-  "performance":"one paragraph: the month's result, what drove it, the positions
-                 that contributed most. Compare against the CDI and against the
-                 IPCA SEPARATELY - never as one blended figure. The CDI answers
-                 whether the risk paid; the IPCA answers whether the money kept
-                 its purchasing power. The Ibovespa may be mentioned as market
-                 context, never as the portfolio's reference. Be explicit that
-                 the outperformance came
-                 from equity exposure in a strong month for the stock market and
-                 not from manager skill",
-  "macro":      "one paragraph: the backdrop and what it means for positioning
-                 from here, stating the authorised macro_* projections",
-  "recommendations": [two paragraphs: the first states the breaches and what they
-                 cost the client, the second explains the logic and priority of
-                 the plan WITHOUT restating its amounts, which the table carries],
-  "coverage":   "one sentence declaring the mark-to-market coverage",
-  "closing":    "one short paragraph offering to discuss - do NOT sign, the
-                 template adds the signature"
+  "highlights": ["First takeaway.", "Second takeaway.", "Third takeaway."],
+  "greeting": "Purpose of the letter, addressed to the client by first name.",
+  "performance": "Monthly result, main contributors and separate comparisons with CDI and IPCA.",
+  "macro": "Relevant macro projections and their meaning for positioning.",
+  "recommendations": ["Main findings and pending reviews.", "Rationale for suggested adjustments and index preference."],
+  "coverage": "Mark-to-market coverage using the authorised figure.",
+  "closing": "Offer to discuss the suggestions. Do not sign."
 }}
+
+Keep the whole letter near 280 words: highlights about 35, greeting 20,
+performance 65, macro 45, recommendations 90 in total, coverage 10 and closing 15.
+In performance, do not blend CDI and IPCA. Ibovespa is market context only.
+Do not attribute outperformance to manager skill without evidence.
 
 The deterministic template already prints class targets, cumulative estimates,
 product caps and trade amounts. Explain their rationale without duplicating
 these numbers in prose. Total length across all fields: about 280 words. Keep it tight; the layout is
 fixed at two pages and long prose breaks it."""
-
-def parse_sections(raw: str) -> dict:
-    """The model sometimes wraps JSON in a code fence; tolerate that, nothing more."""
-    s = raw.strip()
-    if s.startswith("```"):
-        s = s.split("```")[1]
-        s = s[4:] if s.lower().startswith("json") else s
-    return json.loads(s.strip())
-
-
-def flatten(sec: dict) -> str:
-    """The verification gate reads plain text, so the sections are concatenated."""
-    parts = list(sec.get("highlights", [])) + [
-        sec.get("greeting", ""), sec.get("performance", ""), sec.get("macro", "")]
-    parts += list(sec.get("recommendations", []))
-    parts += [sec.get("coverage", ""), sec.get("closing", ""), ADVISOR]
-    return "\n\n".join(p for p in parts if p)
-
 
 ADVISOR = _c["advisor"]
 sections, letter, attempts = {}, "", []
@@ -264,7 +242,11 @@ for attempt in range(1, MAX_ATTEMPTS + 1):
         print(f"      resposta nao veio em JSON valido ({e}); nova tentativa")
         attempts.append([("blocker", "invalid_json", f"reply was not valid JSON: {e}")])
         continue
-    letter = flatten(sections)
+    except ValueError as e:
+        print(f"      estrutura da carta invalida ({e}); nova tentativa")
+        attempts.append([("blocker", "invalid_sections", f"Invalid letter structure: {e}")])
+        continue
+    letter = flatten_sections(sections, ADVISOR)
     issues = verify(letter)
     blockers = [i for i in issues if i[0] == "blocker"]
     attempts.append(issues)
