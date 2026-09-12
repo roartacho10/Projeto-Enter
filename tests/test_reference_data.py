@@ -58,16 +58,14 @@ def test_profile_tables_cover_every_class(ref):
 
 def test_limits_matrix_is_complete_and_monotone(ref):
     d = ref["profile_limits"].copy()
-    for c in ("max_equity_pct", "max_cash_pct", "max_single_pct"):
+    for c in ("max_equity_pct",):
         d[c] = d[c].astype(float)
     horizons = ["Curto", "Medio", "Longo"]
     for rc, g in d.groupby("risk_class"):
         assert set(g["horizon"]) == set(horizons), f"{rc}: matriz incompleta"
         eq = [g[g.horizon == h]["max_equity_pct"].iloc[0] for h in horizons]
-        cash = [g[g.horizon == h]["max_cash_pct"].iloc[0] for h in horizons]
         # Longer horizon: more equity tolerated, less idle cash. Declared shape.
         assert eq == sorted(eq), f"{rc}: teto de RV nao cresce com o horizonte: {eq}"
-        assert cash == sorted(cash, reverse=True), f"{rc}: caixa nao cai com o horizonte: {cash}"
 
 
 def test_corporate_action_ratios_are_positive(ref):
@@ -75,19 +73,11 @@ def test_corporate_action_ratios_are_positive(ref):
     assert (r > 0).all(), "ratio de evento societario deve ser positivo"
 
 
-def test_min_ticket_is_meaningful(ref):
-    """
-    Guards the guard. The pipeline test compares every order against
-    MIN_TICKET_BRL, so zeroing the policy would make that test pass trivially
-    while crumb orders came back - which is how a "test that always passes"
-    gets written. A mutation run found exactly that, so the threshold's own
-    sanity is asserted here.
-    """
+def test_product_cap_is_user_calibrated(ref):
+    """Exact basket targets replace the legacy minimum-ticket heuristic."""
     rpol = ref["rebalance_policy"].set_index("param")
-    minimo = float(rpol.loc["MIN_TICKET_BRL", "value"])
-    assert minimo >= 100, (
-        f"ticket minimo em R$ {minimo:.2f}: abaixo disso a regra que impede ordens "
-        f"irrisorias deixa de existir, e o teste de ordens minimas perde o sentido")
+    assert float(rpol.loc["MAX_PRODUCT_PCT", "value"]) == 25
+    assert "MIN_TICKET_BRL" not in rpol.index
 
 
 def test_cash_target_is_within_the_idle_limit(ref):
@@ -97,6 +87,4 @@ def test_cash_target_is_within_the_idle_limit(ref):
     produce a portfolio its own rules reject.
     """
     alvo = float(ref["rebalance_policy"].set_index("param").loc["TARGET_CASH_PCT", "value"])
-    limites = ref["profile_limits"]["max_cash_pct"].astype(float)
-    assert alvo <= limites.max(), (
-        f"caixa alvo ({alvo}%) acima de todo limite da matriz ({limites.max()}%)")
+    assert alvo == 0

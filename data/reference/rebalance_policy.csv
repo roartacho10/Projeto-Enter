@@ -1,6 +1,5 @@
 param,value,note,policy_source
-TARGET_CASH_PCT,5.0,"Caixa alvo, em % do patrimonio, apos o rebalanceamento",Perfil de Risco - secao 1
-MIN_TICKET_BRL,1000,Valor mínimo de uma operação: abaixo disso o custo de transacao supera o beneficio e a ordem nao deve ser emitida,"Decisao de metodo, declarada"
-EQUITY_REDUCTION_METHOD,proporcional,"Como reduzir o balde de renda variavel: proporcional preserva os pesos relativos e nao exige escolher vencedores, decisao que o sistema nao tem base para tomar","Decisao de metodo, declarada"
-DESTINATION_CATEGORY,Renda fixa pós-fixada,Destino dos recursos liberados,Perfil de Risco - secao 2b
-DESTINATION_CRITERIA,emissor com rating BB+ ou superior,Criterio que o destino precisa satisfazer,Perfil de Risco - secao 2b
+TARGET_CASH_PCT,0,Target cash as a percentage of total wealth,User-approved case assumption
+MAX_PRODUCT_PCT,25,Maximum per RF product or individual stock within its own basket; Ibovespa index fund exempt,User-approved case assumption
+DESTINATION_CATEGORY,Renda fixa pós-fixada,Destination for new RF allocations,Case configuration
+DESTINATION_CRITERIA,produto de emissor com rating BB+ ou superior,Selection criterion; products require advisor review,Case configuration

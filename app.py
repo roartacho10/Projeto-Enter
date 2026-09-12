@@ -20,6 +20,7 @@ import json
 import os
 import subprocess
 import sys
+from src.allocation import MODEL_VERSION, fingerprint
 import pandas as pd
 import streamlit as st
 from streamlit.components.v1 import html as st_html
@@ -310,6 +311,17 @@ st.markdown(f'<p class="sectitle">{name}</p>', unsafe_allow_html=True)
 
 pack, rec = load(cid, "metrics_pack.json"), load(cid, "recommendations.json")
 plan, rep = load(cid, "rebalance_plan.json"), load(cid, "verification_report.json")
+if pack and not {"cdi_return_pct", "ipca_return_pct", "real_return_total_pct", "excess_over_cdi_pp"}.issubset(pack):
+    st.info("Os cálculos salvos usam um formato antigo. Use Atualizar dados para reconstruí-los.")
+    pack = None
+allocation = load(cid, "allocation_target.json")
+current_plan = bool(pack and allocation and plan and plan.get("model_version") == MODEL_VERSION
+                    and allocation.get("metrics_run_id") == pack.get("run_id")
+                    and plan.get("allocation_fingerprint") == allocation.get("fingerprint"))
+if not current_plan:
+    plan, rec, allocation = None, None, None
+    if pack:
+        st.info("Use Atualizar dados para calcular a alocação com o cenário macroeconômico.")
 
 if not pack:
     st.info("Cliente ainda não processado. Use **Atualizar** acima.")
@@ -344,7 +356,7 @@ else:
 
         rows = []
         if "MAX_IDLE_CASH_PCT" in by_rule:
-            rows.append(("Caixa", f'<em>{pct(pack["cash_pct_of_total"])}</em> '
+            rows.append(("Caixa", f'<em>{pct(pack["cash_value"] / pack["total_value_end"] * 100)}</em> '
                                   f'· limite {pct(lim.get("MAX_IDLE_CASH_PCT", 0))}'))
         if "MAX_EQUITY_LOOKTHROUGH_PCT" in by_rule:
             rows.append(("Renda variável",
@@ -354,7 +366,7 @@ else:
             n = len(by_rule["MAX_SINGLE_POSITION_PCT"])
             rows.append(("Concentração",
                          f'<em>{n} {"posição" if n == 1 else "posições"}</em> acima de '
-                         f'{pct(lim.get("MAX_SINGLE_POSITION_PCT", 0))} '
+                         f'{pct(lim.get("MAX_SINGLE_POSITION_PCT", 0))} da respectiva cesta '
                          f'· maior {pct(worst("MAX_SINGLE_POSITION_PCT") or 0)}'))
         if "NO_MATURED_HOLDINGS" in by_rule:
             n = len(by_rule["NO_MATURED_HOLDINGS"])
@@ -395,22 +407,55 @@ else:
                             f'<span>Limite: {r["threshold"]} · {r["policy_source"]}</span></div>',
                             unsafe_allow_html=True)
 
+    if allocation:
+        st.markdown("**Alocação-alvo pelo modelo**")
+        st.caption("Estimativas reais por classe até " + allocation["end"] +
+                   ". Cenário e premissas do case, sem impostos e custos.")
+        ac = st.columns(3)
+        ac[0].metric("Renda variável · alvo", f"{allocation['target_rv_pct']:.2f}%".replace(".", ","))
+        ac[1].metric("Renda fixa · alvo", f"{allocation['target_rf_pct']:.2f}%".replace(".", ","))
+        ac[2].metric("Caixa · alvo", "0,00%")
+        st.dataframe(pd.DataFrame([
+            {"Classe": "RV · exposição ao Ibovespa", "Retorno real estimado acumulado": pct(allocation["rv_real_cumulative_pct"])},
+            {"Classe": "RF · aproximação por Selic/IPCA", "Retorno real estimado acumulado": pct(allocation["rf_real_cumulative_pct"])},
+        ]), hide_index=True, width="stretch")
+        st.caption("Sugestão: vender as posições atuais de RV e migrar para fundo de índice Ibovespa. "
+                   "O índice pode ocupar toda a cesta RV e mantém risco de mercado. Se preferir escolher ações, "
+                   "cada ação deve ficar em até 25% da cesta RV. Em RF, o limite é 25% da cesta por produto.")
+        with st.expander("Como o cenário define o alvo"):
+            st.write(f"Teto de RV pelo perfil/horizonte: {pct(allocation['rv_ceiling_pct'])}. "
+                     f"Diferença de retornos reais: {pp(allocation['spread_pp'])}. "
+                     f"Fator macro: {allocation['macro_factor']:.4f}.")
+            st.write("Alvo RV = teto × limitar(0,5 + diferença / (2 × sensibilidade), entre 0 e 1). "
+                     f"Sensibilidade: {allocation['sensitivity_pp']:g} p.p. acumulados.")
+            st.dataframe(pd.DataFrame([{
+                "Ano": r["year"], "Meses considerados": r["months"],
+                "PIB real": pct(r["pib"]), "IPCA": pct(r["ipca"]), "Selic": pct(r["selic"]),
+                "RV real anual estimada": pct(r["rv_real_pct"]), "RF real anual estimada": pct(r["rf_real_pct"]),
+            } for r in allocation["annual"]]), hide_index=True, width="stretch")
+            st.write(f"Dividend yield assumido: {pct(allocation['dividend_yield_pct'])} ao ano.")
+            for assumption in allocation["assumptions"]:
+                st.write(assumption)
+
     if plan and plan["trades"]:
         st.markdown("**Ajustes sugeridos**")
         verbo = {"sell": "Vender", "redeem": "Resgatar", "buy": "Aplicar"}
         st.dataframe(pd.DataFrame([{
             "Operação": verbo[t["action"]],
             "Ativo ou destino": t["instrument_id"] or f"{t['category']} — {t['criteria']}",
-            "Valor": brl(t["amount_brl"])} for t in plan["trades"]]),
+            "Valor": brl(t["amount_brl"]),
+            "Produtos distintos (mín.)": str(t.get("min_products") or "—")} for t in plan["trades"]]),
             width="stretch", hide_index=True)
-        n_fix, n_all = len(plan["violations_before"]), len(rec["recommendations"]) if rec else 0
-        resto = max(n_all - n_fix, 0)
-        st.caption(
-            f"Estes ajustes resolvem {n_fix} dos {n_all} pontos de atenção. "
-            + (f"Os {resto} restantes são de enquadramento de família: o sistema os aponta "
-               f"mas não emite ordem, porque escolher o substituto exige uma fonte de "
-               f"research que ele não tem. " if resto else "")
-            + f"Caixa após: {brl(plan['cash_after_brl'])}.")
+        st.caption("Sugestões, sem execução de operações. "
+                   + ("Alvos e limites por produto conferidos na simulação. " if plan["resolved"]
+                      else "A simulação ainda apresenta pendências. ")
+                   + f"Caixa após: {brl(plan['cash_after_brl'])}.")
+        for pending in plan.get("pending_reviews", []):
+            st.warning("Revisão de categoria ainda necessária: " + pending)
+        with st.expander("Carteira simulada e premissas das operações"):
+            st.dataframe(pd.DataFrame(plan["post_positions"]), hide_index=True, width="stretch")
+            for assumption in plan["assumptions"]:
+                st.write(assumption)
 
 # ---------------------------------------------------------------- history
 hist = load(cid, "history.json")
@@ -452,10 +497,21 @@ if hist:
 st.markdown('<p class="sectitle">Relatório do cliente</p>', unsafe_allow_html=True)
 
 pdf_p, html_p = OUT / cid / "letter.pdf", OUT / cid / "letter.html"
+generation = load(cid, "generation_log.json") or {}
+current_figures = load(cid, "figures.json") or {}
+layout = load(cid, "layout_report.json") or {}
+current_letter = bool(current_plan and generation.get("approved")
+                      and generation.get("model_version") == MODEL_VERSION
+                      and generation.get("allocation_fingerprint") == allocation.get("fingerprint")
+                      and generation.get("figures_fingerprint") == fingerprint(current_figures)
+                      and layout.get("generation_run_id") == generation.get("run_id")
+                      and layout.get("html_ready"))
+if (pdf_p.exists() or html_p.exists()) and not current_letter:
+    st.info("O relatório salvo é anterior aos dados/modelo atuais. Gere outro relatório para visualizar ou baixar.")
 a = st.columns([2, 1, 1])
 
 if a[0].button(f"Gerar relatório de {name.split()[0]}", type="primary",
-               width="stretch", disabled=not pack):
+               width="stretch", disabled=not current_plan):
     if not key:
         st.error("Informe a chave da OpenAI na barra lateral.")
     else:
@@ -467,10 +523,10 @@ if a[0].button(f"Gerar relatório de {name.split()[0]}", type="primary",
             st.cache_data.clear()
             st.rerun()
 
-if pdf_p.exists():
+if current_letter and layout.get("pdf_ready") and pdf_p.exists():
     a[1].download_button("Baixar PDF", pdf_p.read_bytes(), f"relatorio_{cid.lower()}.pdf",
                          "application/pdf", width="stretch")
-elif html_p.exists() and a[1].button("Gerar PDF", width="stretch"):
+elif current_letter and html_p.exists() and a[1].button("Gerar PDF", width="stretch"):
     failed, log = run(RENDER, cid)
     st.session_state["log"] = log
     if failed:
@@ -479,11 +535,11 @@ elif html_p.exists() and a[1].button("Gerar PDF", width="stretch"):
                    "as regras de impressão em A4.")
     else:
         st.rerun()
-if html_p.exists():
+if current_letter and html_p.exists():
     a[2].download_button("Baixar HTML", html_p.read_bytes(), f"relatorio_{cid.lower()}.html",
                          "text/html", width="stretch")
 
-if rep is not None:
+if current_letter and rep is not None:
     blockers = [r for r in rep if r["severity"] == "blocker"]
     if blockers:
         st.error(f"O relatório não passou na verificação: {len(blockers)} pendência(s). "
@@ -491,7 +547,7 @@ if rep is not None:
     else:
         st.caption("Verificado: toda cifra do relatório consta da lista autorizada.")
 
-if html_p.exists():
+if current_letter and html_p.exists():
     with st.expander("Pré-visualizar relatório"):
         st_html(html_p.read_text(encoding="utf-8"), height=900, scrolling=True)
 

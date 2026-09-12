@@ -17,6 +17,10 @@ The design rule the whole thing is built around:
 
 ## What it does
 
+The recommendation engine now uses the approved macro allocation model. See
+[Macro-driven allocation](docs/macro-allocation.md) for formulas, calibration,
+the suggested index migration, per-basket product limits and limitations.
+
 1. **Ingests** prices from three public sources: CVM (fund quotas, daily and
    FIDC monthly), B3 via Yahoo (equities and the Ibovespa) and the Brazilian
    Central Bank (CDI, Selic, IPCA), and reads the house macro report's
@@ -36,8 +40,12 @@ The design rule the whole thing is built around:
    market context only.
 3. **Applies** suitability rules read from CSV, not hard-coded, each carrying
    the clause of the client's risk-profile document it comes from.
-4. **Sizes** the minimum set of trades that clears every breach, then re-runs
-   the rules on the post-trade portfolio to prove the plan works.
+4. **Allocates** between RV and RF using cumulative real class-return estimates
+   through December 2026, within the profile/horizon equity ceiling. It proposes
+   zero cash, migration of current RV to an unspecified Ibovespa index fund and
+   a 25% per-product limit within RF (also per individual stock within RV if the
+   client prefers stock picking; the index fund is exempt). It simulates the
+   monetary trades and separately reports pending category reviews.
 5. **Writes** the letter with a language model that receives a list of
    authorised figures and is told to quote them verbatim.
 6. **Verifies** in two layers. The figure gate matches every number in the text,
@@ -91,7 +99,7 @@ streamlit run app.py
 ### Tests
 
 ```bash
-python -m pytest -q          # 36 tests, ~8 s, no network and no model calls
+python -m pytest -q          # deterministic tests; no market downloads or model calls
 ```
 
 The suite copies out **only the files git publishes** and runs the
@@ -108,8 +116,8 @@ What it holds to:
   contributions add up to the total return
 - the profile reading the three parameters *with the sentence that produced each*,
   and that no numeric limit claims the profile document as its source
-- the rebalance clearing every violation, with no order below the minimum ticket
-  and no purchase naming a specific product
+- macro targets staying inside the profile ceiling, exact simulated cash flows,
+  per-basket product caps, index migration and separate pending category reviews
 - the verification gate: it passes a letter of authorised figures, rejects an
   invented one, does not mistake a ticker's digit for a claim, and catches
   forbidden language and a missing client name
@@ -187,8 +195,8 @@ produces the same two pages.
   because the rules know exactly which positions breach; purchases name a
   product family and a credit criterion, because choosing an issuer needs a
   research source this system does not have.
-- It does not optimise toward a target allocation. No such target is declared
-  anywhere, so inventing one would be exactly the failure this pipeline exists
-  to prevent.
+- It uses a user-calibrated class target, not a statistically optimal portfolio.
+  Expected real returns use GDP plus assumed dividend yield for RV and Selic
+  deflated by IPCA for RF. The complete assumptions are documented above.
 - It does not report a validation that did not run. Only one client has a
   hand-checked answer key; for the others the script says so out loud.

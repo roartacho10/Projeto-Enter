@@ -20,6 +20,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from contracts import MetricsPack, Recommendation, RecommendationSet  # noqa: E402
+from allocation import build_target
 
 from context import CLIENT_ID, OUT, REF, client, policy_path  # noqa: E402
 
@@ -31,6 +32,8 @@ pack = MetricsPack.model_validate_json((OUT / "metrics_pack.json").read_text(enc
 instruments = pd.read_csv(REF / "instruments.csv", dtype=str).fillna("").set_index("instrument_id")
 policy = pd.read_csv(policy_path(), dtype=str).fillna("").set_index("rule_id")
 riskcat = pd.read_csv(REF / "risk_categories.csv", dtype=str).set_index("risk_category")
+target = build_target(pack, REF, policy)
+(OUT / "allocation_target.json").write_text(json.dumps(target, ensure_ascii=False, indent=2), encoding="utf-8")
 
 pos = {m.instrument_id: m for m in pack.positions}
 # End of period, not start: the recommendation is about the portfolio the client
@@ -62,18 +65,19 @@ direct_pct = sum(m.value_end for m in pack.positions
 
 # --- 1. idle cash
 lim = float(rule("MAX_IDLE_CASH_PCT")["threshold"])
-if pack.cash_pct_of_total > lim:
+cash_pct_end = pack.cash_value / pack.total_value_end * 100
+if cash_pct_end > lim:
     monthly = pack.cash_value * pack.cdi_return_pct / 100
     add("MAX_IDLE_CASH_PCT", "allocate",
-        f"R$ {pack.cash_value:,.2f} em caixa ({pack.cash_pct_of_total:.1f}% do patrimonio)",
+        f"R$ {pack.cash_value:,.2f} em caixa ({cash_pct_end:.1f}% do patrimonio final)",
         f"maximo {lim:.1f}%",
         f"No mes analisado, esse saldo remunerado a CDI teria rendido R$ {monthly:,.2f}.",
-        "CASH_BRL", round(pack.cash_value, 2), obs_pct=round(pack.cash_pct_of_total, 2))
+        "CASH_BRL", round(pack.cash_value, 2), obs_pct=round(cash_pct_end, 2))
 
 # --- 2. matured instruments still held
 for iid, ins in instruments.iterrows():
     md = ins["maturity_date"]
-    if md and iid in pos and date.fromisoformat(md) < pack.period_start:
+    if md and iid in pos and date.fromisoformat(md) <= pack.period_end:
         add("NO_MATURED_HOLDINGS", "redeem",
             f"{ins['statement_name']} venceu em {md} e segue na carteira",
             "nenhum papel vencido em posicao",
@@ -95,11 +99,15 @@ lim = float(rule("MAX_SINGLE_POSITION_PCT")["threshold"])
 for m in sorted(pack.positions, key=lambda x: -x.value_end):
     if instruments.loc[m.instrument_id, "type"] == "cash":
         continue
-    p = m.value_end / invested * 100
+    is_equity = riskcat.loc[instruments.loc[m.instrument_id, "risk_category"], "is_equity_exposure"] == "1"
+    if is_equity and instruments.loc[m.instrument_id, "type"] != "stock":
+        continue  # fund holdings are migrated to the preferred index route
+    basket = equity_value if is_equity else invested - equity_value
+    p = m.value_end / basket * 100 if basket else 0
     if p > lim:
         add("MAX_SINGLE_POSITION_PCT", "review",
-            f"{instruments.loc[m.instrument_id, 'statement_name']} representa {p:.1f}% do investido",
-            f"maximo {lim:.1f}%", "", m.instrument_id, round(m.value_end, 2),
+            f"{instruments.loc[m.instrument_id, 'statement_name']} representa {p:.1f}% da cesta {'RV' if is_equity else 'RF'}",
+            f"maximo {lim:.1f}% da respectiva cesta", "", m.instrument_id, round(m.value_end, 2),
             obs_pct=round(p, 2))
 
 # --- 5. restricted categories
@@ -116,9 +124,24 @@ for m in pack.positions:
             "familia compativel com o mandato", "", m.instrument_id,
             round(m.value_end, 2), obs_pct=round(m.value_end / invested * 100, 2))
 
+current_rv_total = equity_value / pack.total_value_end * 100
+recs.append(Recommendation(
+    rule_id="MACRO_ALLOCATION", action="review", observed_pct=round(current_rv_total, 2),
+    observed=f"RV atual: {current_rv_total:.2f}% do patrimônio final; alvo pelo modelo: {target['target_rv_pct']:.2f}%.",
+    threshold=f"RV {target['target_rv_pct']:.2f}%; RF {target['target_rf_pct']:.2f}%; caixa zero",
+    rationale="Perfil e horizonte fixam o teto; diferença de retornos reais estimados modula o alvo dentro dele.",
+    policy_source=target["source"], severity="info"))
+if equity_value > 0:
+    recs.append(Recommendation(
+        rule_id="INDEX_MIGRATION", action="review", amount_brl=round(equity_value, 2),
+        observed="Posições atuais de RV: sugestão de venda e migração para fundo de índice Ibovespa.",
+        threshold="Fundo de índice pode ocupar toda a cesta RV; seleção própria limita cada ação a 25% da cesta.",
+        rationale="Preferência aprovada para o case, sem escolha de ações e sem execução automática.",
+        policy_source="User-approved index preference", severity="info"))
+
 idle = pack.cash_value + sum(
     pos[i].value_end for i, ins in instruments.iterrows()
-    if ins["maturity_date"] and i in pos and date.fromisoformat(ins["maturity_date"]) < pack.period_start)
+    if ins["maturity_date"] and i in pos and date.fromisoformat(ins["maturity_date"]) <= pack.period_end)
 
 rs = RecommendationSet(
     run_id=RUN_ID, client_id=CLIENT, profile=PROFILE, recommendations=recs,

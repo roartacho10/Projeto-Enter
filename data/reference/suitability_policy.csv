@@ -1,6 +1,6 @@
 rule_id,rule_type,threshold,severity,rationale,policy_source,source_type
-MAX_IDLE_CASH_PCT,idle_capital,5.0,warning,"Limite generico. Vale para cliente sem documento de perfil: sem objetivo e horizonte declarados, aplica-se a celula Moderado x Medio.",profile_limits.csv [Moderado x Medio] (padrao),equivalencia
+MAX_IDLE_CASH_PCT,idle_capital,0,warning,Caixa-alvo zero conforme premissa aprovada do case.,rebalance_policy.csv,equivalencia
 MAX_EQUITY_LOOKTHROUGH_PCT,equity_lookthrough,25.0,warning,"Limite generico. Vale para cliente sem documento de perfil: sem objetivo e horizonte declarados, aplica-se a celula Moderado x Medio.",profile_limits.csv [Moderado x Medio] (padrao),equivalencia
-MAX_SINGLE_POSITION_PCT,concentration,15.0,warning,"Limite generico. Vale para cliente sem documento de perfil: sem objetivo e horizonte declarados, aplica-se a celula Moderado x Medio.",profile_limits.csv [Moderado x Medio] (padrao),equivalencia
+MAX_SINGLE_POSITION_PCT,concentration,25.0,warning,Limite por produto RF ou ação individual dentro da respectiva cesta; fundo de índice Ibovespa isento.,rebalance_policy.csv,equivalencia
 NO_MATURED_HOLDINGS,matured_instrument,0,warning,Papel vencido nao remunera e deveria ter sido reinvestido no vencimento.,Boa pratica operacional,operacional
 RESTRICTED_CATEGORY,restricted_category,long_biased_fund|multimarket_macro|fidc_senior,warning,"Familias fora do mandato Moderado. Limite generico, aplicado a cliente sem documento de perfil.",profile_families.csv (padrao Moderado),equivalencia

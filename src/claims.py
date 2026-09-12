@@ -40,6 +40,7 @@ from pathlib import Path
 import json
 import re
 import sys
+import unicodedata
 
 import pandas as pd
 
@@ -113,6 +114,26 @@ def _sentences(text: str) -> list[str]:
     return [s.strip() for s in re.split(r"(?<=[.;!?])\s+", flat) if s.strip()]
 
 
+def check_allocation_claims(text: str, target: dict) -> list[tuple[str, str, str]]:
+    """Check explicit target/forecast phrases; not arbitrary natural language."""
+    low = "".join(c for c in unicodedata.normalize("NFD", text.lower()) if not unicodedata.combining(c))
+    issues = []
+    number = r"\s*(?:de|:|e|em)?\s*([+-]?\d+(?:,\d+)?)\s*%"
+    for label, key in ((r"(?:rv|renda variavel)", "target_rv_pct"),
+                       (r"(?:rf|renda fixa)", "target_rf_pct")):
+        pattern = r"\balvo(?:\s+(?:de|da|em))?\s+" + label + number
+        for match in re.finditer(pattern, low):
+            if abs(float(match.group(1).replace(",", ".")) - target[key]) > .011:
+                issues.append(("blocker", "claims_allocation", f"Alvo atribuído à classe incorreta: {match.group(0)}"))
+    for label, key in ((r"(?:rv|renda variavel)", "rv_real_cumulative_pct"),
+                       (r"(?:rf|renda fixa)", "rf_real_cumulative_pct")):
+        pattern = r"retorno real estimado acumulado (?:da|de) " + label + number
+        for match in re.finditer(pattern, low):
+            if abs(float(match.group(1).replace(",", ".")) - target[key]) > .011:
+                issues.append(("blocker", "claims_allocation", f"Estimativa atribuída à classe incorreta: {match.group(0)}"))
+    return issues
+
+
 def check(text: str) -> tuple[list[tuple[str, str, str]], dict]:
     """
     Returns (issues, coverage). Coverage is reported, never implied: it says how
@@ -161,6 +182,12 @@ def check(text: str) -> tuple[list[tuple[str, str, str]], dict]:
     sentences = _sentences(text)
     checked = skipped = 0
     low_all = " ".join(sentences).lower()
+    target = _load("allocation_target.json")
+    if target:
+        issues.extend(check_allocation_claims(text, target))
+    # Future scenarios must not be compared to realised monthly returns.
+    forecast_words = r"estimad|proje[çc]|esperad|futur|\balvo\b|cenario|cenário"
+    historical_text = " ".join(s for s in sentences if not re.search(forecast_words, s.lower())).lower()
 
     # ---------------- B: execution language, sentence-independent
     for pat in EXECUTED:
@@ -171,26 +198,26 @@ def check(text: str) -> tuple[list[tuple[str, str, str]], dict]:
                            f"o plano é recomendação, nada foi executado"))
 
     # ---------------- D: comparisons against the declared references
-    if re.search(BEAT_CDI, low_all) and pack["excess_over_cdi_pp"] <= 0:
+    if re.search(BEAT_CDI, historical_text) and pack["excess_over_cdi_pp"] <= 0:
         issues.append(("blocker", "claims_comparison",
                        f"afirma ter superado o CDI, mas o excesso medido é "
                        f"{pack['excess_over_cdi_pp']:+.2f} p.p."))
         checked += 1
-    elif re.search(BEAT_CDI, low_all):
+    elif re.search(BEAT_CDI, historical_text):
         checked += 1
-    if re.search(LOST_CDI, low_all) and pack["excess_over_cdi_pp"] >= 0:
+    if re.search(LOST_CDI, historical_text) and pack["excess_over_cdi_pp"] >= 0:
         issues.append(("blocker", "claims_comparison",
                        f"afirma ter ficado abaixo do CDI, mas o excesso medido é "
                        f"{pack['excess_over_cdi_pp']:+.2f} p.p."))
         checked += 1
-    if re.search(BEAT_INFL, low_all) and pack["real_return_total_pct"] <= 0:
+    if re.search(BEAT_INFL, historical_text) and pack["real_return_total_pct"] <= 0:
         issues.append(("blocker", "claims_comparison",
                        f"afirma ganho real, mas o retorno real medido é "
                        f"{pack['real_return_total_pct']:+.2f}%"))
         checked += 1
-    elif re.search(BEAT_INFL, low_all):
+    elif re.search(BEAT_INFL, historical_text):
         checked += 1
-    if re.search(LOST_INFL, low_all) and pack["real_return_total_pct"] >= 0:
+    if re.search(LOST_INFL, historical_text) and pack["real_return_total_pct"] >= 0:
         issues.append(("blocker", "claims_comparison",
                        f"afirma perda de poder de compra, mas o retorno real medido é "
                        f"{pack['real_return_total_pct']:+.2f}%"))
@@ -248,7 +275,7 @@ def check(text: str) -> tuple[list[tuple[str, str, str]], dict]:
             continue
         iid = next(iter(hits))
 
-        if up ^ down and iid in ret:
+        if up ^ down and iid in ret and not re.search(forecast_words, low):
             r = ret[iid]
             if up and r < 0:
                 issues.append(("blocker", "claims_direction",
@@ -262,11 +289,11 @@ def check(text: str) -> tuple[list[tuple[str, str, str]], dict]:
 
         if wants and re.search(RECOMMENDING, low) and plan is not None:
             allowed = planned.get(iid, set())
-            if (wants - allowed) and iid in ret and not allowed:
+            if (wants - allowed) and iid in ret and not iid.startswith("__"):
                 issues.append(("blocker", "claims_action",
                                f"{iid}: a carta recomenda "
                                f"{'/'.join(sorted(wants - allowed))} mas o plano nao "
-                               f"contempla nenhuma operacao nesse ativo"))
+                               f"autoriza essa ação nesse ativo"))
             checked += 1
 
     return issues, {"sentences": len(sentences), "checked": checked, "skipped": skipped}

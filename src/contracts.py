@@ -181,15 +181,16 @@ class Trade(BaseModel):
     criteria: Optional[str] = None
     amount_brl: float
     min_issuers: Optional[int] = None
+    min_products: Optional[int] = None
+    asset_class: Optional[Literal["RV", "RF"]] = None
     reason: str
     rule_id: str
 
 
 class RebalancePlan(BaseModel):
     """
-    The minimum set of trades that clears every suitability breach - not an
-    optimisation toward an invented ideal allocation. The plan is only valid if
-    re-running the rules on the post-trade portfolio finds nothing.
+    Suggested transition to a calibrated macro allocation. Resolved covers
+    numerical targets and product caps; pending_reviews records other findings.
     """
     run_id: str
     client_id: str
@@ -200,6 +201,11 @@ class RebalancePlan(BaseModel):
     violations_before: list[str] = Field(default_factory=list)
     violations_after: list[str] = Field(default_factory=list)
     resolved: bool
+    model_version: str = "legacy"
+    allocation_fingerprint: str = ""
+    post_positions: list[dict] = Field(default_factory=list)
+    pending_reviews: list[str] = Field(default_factory=list)
+    assumptions: list[str] = Field(default_factory=list)
 
 
 # ---------------------------------------------------------------- history

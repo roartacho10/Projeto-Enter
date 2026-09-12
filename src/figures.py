@@ -87,6 +87,20 @@ def build() -> dict[str, str]:
         for i, t in enumerate(plan.trades, 1):
             tag = t.instrument_id or "destino"
             f[f"trade_{i}_{t.action}_{tag}"] = money(t.amount_brl)
+            if t.min_products:
+                f[f"trade_{i}_min_produtos"] = str(t.min_products)
+
+    ap = OUT / "allocation_target.json"
+    if ap.exists():
+        allocation = json.loads(ap.read_text(encoding="utf-8"))
+        for key in ("target_rv_pct", "target_rf_pct", "target_cash_pct", "rv_ceiling_pct",
+                    "rv_real_cumulative_pct", "rf_real_cumulative_pct", "dividend_yield_pct"):
+            f[f"alocacao_{key}"] = pct(allocation[key])
+        f["alocacao_spread_pp"] = pp(allocation["spread_pp"])
+        f["alocacao_sensibilidade_pp"] = pp(allocation["sensitivity_pp"])
+        for row in allocation["annual"]:
+            for key in ("rv_real_pct", "rf_real_pct"):
+                f[f"alocacao_{key}_{row['year']}"] = pct(row[key])
 
     # Macro projections, extracted from the report by src/extract_macro.py.
     # The projections TABLE is the authority. Where the report's own narrative

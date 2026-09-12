@@ -1,10 +1,10 @@
-risk_class,horizon,max_equity_pct,max_cash_pct,max_single_pct,note
-Conservador,Curto,0,15,20,
-Conservador,Medio,5,10,20,
-Conservador,Longo,10,8,20,
-Moderado,Curto,15,10,15,
-Moderado,Medio,25,5,15,"Celula do Albert. Reproduz os limites em uso antes desta tabela existir."
-Moderado,Longo,40,4,15,
-Arrojado,Curto,40,8,10,
-Arrojado,Medio,70,3,10,
-Arrojado,Longo,85,3,10,
+risk_class,horizon,max_equity_pct,note
+Conservador,Curto,0,
+Conservador,Medio,5,
+Conservador,Longo,10,
+Moderado,Curto,15,
+Moderado,Medio,25,Albert equity ceiling; macro factor determines use of this ceiling
+Moderado,Longo,40,
+Arrojado,Curto,40,
+Arrojado,Medio,70,
+Arrojado,Longo,85,

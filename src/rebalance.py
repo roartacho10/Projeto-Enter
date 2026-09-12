@@ -1,179 +1,166 @@
-"""
-L3b - Sized buy/sell proposal.
+"""Suggested transition to the macro class target; no orders are executed.
 
-Computes the smallest set of trades that clears every suitability breach, then
-re-applies the rules to the resulting portfolio and reports what is left. The
-plan is only published as resolved if that second pass finds nothing: the
-system proves its own recommendation instead of asserting it.
-
-Sells name instruments, because the rules identify exactly which positions
-breach. Buys name a category and the criterion it must satisfy - naming a
-specific product would require a research source this system does not have,
-and inventing one is the failure mode the whole pipeline exists to avoid.
-
-Run: python src/rebalance.py
+Sell existing RV into an unspecified Ibovespa index fund. Keep eligible RF
+products up to the within-RF cap, trim largest holdings if RF exceeds its
+target, and split new RF money across unspecified products. Integer cents
+preserve wealth and ensure that published amounts reproduce the simulation.
+This is a deterministic transition, not a cost or return optimisation.
 """
 from __future__ import annotations
-from datetime import datetime, timezone, date
-from pathlib import Path
+from datetime import date, datetime, timezone
+import json
 import math
-import sys
-import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from contracts import MetricsPack, RebalancePlan, Trade  # noqa: E402
-
-from context import OUT, REF, policy_path  # noqa: E402
-RUN_ID = datetime.now(timezone.utc).strftime("run_%Y%m%dT%H%M%SZ")
-
-pack = MetricsPack.model_validate_json((OUT / "metrics_pack.json").read_text(encoding="utf-8"))
-ins = pd.read_csv(REF / "instruments.csv", dtype=str).fillna("").set_index("instrument_id")
-cats = pd.read_csv(REF / "risk_categories.csv", dtype=str).fillna("").set_index("risk_category")
-pol = pd.read_csv(policy_path(), dtype=str).fillna("").set_index("rule_id")
-rpol = pd.read_csv(REF / "rebalance_policy.csv", dtype=str).set_index("param")
-
-MAX_EQUITY = float(pol.loc["MAX_EQUITY_LOOKTHROUGH_PCT", "threshold"])
-MAX_SINGLE = float(pol.loc["MAX_SINGLE_POSITION_PCT", "threshold"])
-TARGET_CASH = float(rpol.loc["TARGET_CASH_PCT", "value"])
-DEST = rpol.loc["DESTINATION_CATEGORY", "value"]
-DEST_CRIT = rpol.loc["DESTINATION_CRITERIA", "value"]
-MIN_TICKET = float(rpol.loc["MIN_TICKET_BRL", "value"])
-
-total = pack.total_value_end
-value = {m.instrument_id: m.value_end for m in pack.positions}
-is_equity = {i: cats.loc[ins.loc[i, "risk_category"], "is_equity_exposure"] == "1" for i in value}
-
-# Limits are expressed against the invested base the portfolio will have once
-# cash sits at its target - otherwise the ceilings move as we trade.
-invested_now = sum(v for k, v in value.items() if ins.loc[k, "type"] != "cash")
-cash_target = total * TARGET_CASH / 100
-invested_target = total - cash_target
-cap_single = invested_target * MAX_SINGLE / 100
-cap_equity = invested_target * MAX_EQUITY / 100
+from allocation import MODEL_VERSION
+from contracts import RebalancePlan, Trade
 
 
-def violations(vals: dict[str, float], cash: float) -> list[str]:
-    inv = sum(v for k, v in vals.items() if ins.loc[k, "type"] != "cash")
-    out = []
-    if cash / total * 100 > float(pol.loc["MAX_IDLE_CASH_PCT", "threshold"]):
-        out.append(f"caixa em {cash/total*100:.2f}% do patrimônio")
-    for k, v in vals.items():
-        if ins.loc[k, "type"] == "cash":
+def build_plan(pack, instruments, categories, target, params, recommendations) -> RebalancePlan:
+    if target.get("metrics_run_id") != pack.run_id or target.get("model_version") != MODEL_VERSION:
+        raise ValueError("Stale allocation target: run recommendations again")
+    if not 0 <= float(target["target_rv_pct"]) <= 100:
+        raise ValueError("Invalid RV allocation target")
+    if float(params["TARGET_CASH_PCT"]) != 0:
+        raise ValueError("This model requires zero target cash")
+    product_pct = float(params["MAX_PRODUCT_PCT"])
+    if not 0 < product_pct <= 100:
+        raise ValueError("Invalid within-basket product limit")
+    cents = lambda v: int(round(v * 100))
+    positions = {}
+    for m in pack.positions:
+        ins = instruments[m.instrument_id]
+        kind = "CASH" if ins["type"] == "cash" else (
+            "RV" if str(categories[ins["risk_category"]]["is_equity_exposure"]) == "1" else "RF")
+        positions[m.instrument_id] = {
+            "instrument_id": m.instrument_id, "asset_class": kind, "cents": cents(m.value_end),
+            "matured": bool(ins["maturity_date"] and date.fromisoformat(ins["maturity_date"]) <= pack.period_end),
+            "index_fund": False,
+        }
+    total = sum(p["cents"] for p in positions.values())
+    if any(p["cents"] < 0 for p in positions.values()):
+        raise ValueError("This model requires nonnegative positions")
+    if total <= 0 or abs(total - cents(pack.total_value_end)) > 1:
+        raise ValueError("Position values do not reconcile with total wealth")
+    rv_target = round(total * target["target_rv_pct"] / 100)
+    rf_target = total - rv_target
+    rf_cap = math.floor(rf_target * product_pct / 100)
+    if rf_target and rf_cap == 0:
+        raise ValueError("RF target too small to split into valid cent-denominated products")
+    current_rv = sum(p["cents"] for p in positions.values() if p["asset_class"] == "RV")
+    initial_cash = sum(p["cents"] for p in positions.values() if p["asset_class"] == "CASH")
+    trades, proceeds = [], 0
+    before = []
+    if initial_cash:
+        before.append("Caixa acima do alvo zero")
+    if abs(current_rv - rv_target) > 1:
+        before.append("Distribuição entre classes diferente do alvo macro")
+    if current_rv:
+        before.append("Migração sugerida das posições atuais de RV para índice")
+
+    # Each original product receives at most one consolidated sell/redemption.
+    original = {k: p["cents"] for k, p in positions.items()}
+    for p in positions.values():
+        if p["asset_class"] == "CASH":
+            p["cents"] = 0
+        elif p["matured"] or p["asset_class"] == "RV":
+            p["cents"] = 0
+        else:
+            p["cents"] = min(p["cents"], rf_cap)
+    excess_rf = max(0, sum(p["cents"] for p in positions.values()
+                          if p["asset_class"] == "RF") - rf_target)
+    for k in sorted(positions, key=lambda k: (-positions[k]["cents"], k)):
+        p = positions[k]
+        if p["asset_class"] == "RF" and excess_rf:
+            cut = min(p["cents"], excess_rf)
+            p["cents"] -= cut
+            excess_rf -= cut
+    for k, p in positions.items():
+        amount = original[k] - p["cents"]
+        if p["asset_class"] == "CASH" or amount <= 0:
             continue
-        md = ins.loc[k, "maturity_date"]
-        if md and date.fromisoformat(md) < pack.period_end and v > 0:
-            out.append(f"{ins.loc[k,'display_name']} vencido e ainda em carteira")
-        if v / inv * 100 > MAX_SINGLE + 1e-6:
-            out.append(f"{ins.loc[k,'display_name']} em {v/inv*100:.2f}% do investido")
-    eq = sum(v for k, v in vals.items() if is_equity[k])
-    if eq / inv * 100 > MAX_EQUITY + 1e-6:
-        out.append(f"renda variável em {eq/inv*100:.2f}% do investido")
-    return out
+        if p["matured"]:
+            reason, rule, action = "Sugestão de resgate de produto vencido.", "NO_MATURED_HOLDINGS", "redeem"
+            before.append(f"{k}: produto vencido")
+        elif p["asset_class"] == "RV":
+            reason, rule, action = "Sugestão de migrar a posição para exposição ao Ibovespa via fundo de índice.", "INDEX_MIGRATION", "sell"
+        else:
+            reason, rule, action = "Ajuste ao alvo RF e ao limite por produto dentro da cesta RF.", "RF_TARGET_AND_PRODUCT_CAP", "sell"
+            before.append(f"{k}: ajuste à cesta RF")
+        trades.append(Trade(action=action, instrument_id=k, amount_brl=amount / 100,
+                            asset_class=p["asset_class"], reason=reason, rule_id=rule))
+        proceeds += amount
+
+    def buy(kind, amount, category, criteria, count):
+        if not amount:
+            return
+        trades.append(Trade(action="buy", category=category, criteria=criteria,
+                            amount_brl=amount / 100, min_products=count, asset_class=kind,
+                            reason="Sugestão para atingir a alocação-alvo pelo modelo; depende de aprovação do cliente.",
+                            rule_id="MACRO_ALLOCATION"))
+        unit, remainder = divmod(amount, count)
+        for n in range(count):
+            key = f"PROPOSED_{kind}_{n + 1}"
+            positions[key] = {"instrument_id": key, "asset_class": kind,
+                              "cents": unit + (n < remainder), "matured": False,
+                              "index_fund": kind == "RV"}
+
+    buy("RV", rv_target, "Fundo de índice Ibovespa",
+        "exposição ao Ibovespa, sem selecionar fundo ou ticker específico", 1)
+    retained_rf = sum(p["cents"] for p in positions.values() if p["asset_class"] == "RF")
+    rf_buy = rf_target - retained_rf
+    buy("RF", rf_buy, params["DESTINATION_CATEGORY"], params["DESTINATION_CRITERIA"],
+        max(1, math.ceil(rf_buy / rf_cap)) if rf_cap else 1)
+    invested_buy = rv_target + rf_buy
+    if invested_buy != initial_cash + proceeds:
+        raise ValueError("Trade cash flows do not reconcile")
+    after = []
+    if sum(p["cents"] for p in positions.values()) != total:
+        after.append("Patrimônio não preservado")
+    if any(p["cents"] < 0 or (p["matured"] and p["cents"]) for p in positions.values()):
+        after.append("Posição inválida ou vencida na simulação")
+    for kind, goal in (("RV", rv_target), ("RF", rf_target), ("CASH", 0)):
+        if sum(p["cents"] for p in positions.values() if p["asset_class"] == kind) != goal:
+            after.append(f"Alvo {kind} não atingido")
+    for p in positions.values():
+        if p["asset_class"] == "RF" and p["cents"] > rf_cap:
+            after.append(f"{p['instrument_id']}: concentração RF")
+        if p["asset_class"] == "RV" and p["cents"] and not p["index_fund"]:
+            after.append("Migração para índice incompleta")
+    pending = [r.observed for r in recommendations.recommendations
+               if r.rule_id.startswith("RESTRICTED_CATEGORY") and r.instrument_id
+               and positions[r.instrument_id]["cents"] > 0]
+    post = [{**{k: v for k, v in p.items() if k != "cents"}, "value_brl": p["cents"] / 100}
+            for p in positions.values() if p["cents"]]
+    return RebalancePlan(
+        run_id=datetime.now(timezone.utc).strftime("run_%Y%m%dT%H%M%SZ"), client_id=pack.client_id,
+        trades=trades, proceeds_brl=proceeds / 100, deployable_brl=invested_buy / 100,
+        cash_after_brl=0, violations_before=before, violations_after=after, resolved=not after,
+        model_version=MODEL_VERSION, allocation_fingerprint=target["fingerprint"],
+        post_positions=post, pending_reviews=pending,
+        assumptions=["Simulação em valores monetários, sem impostos, custos, liquidez ou lotes negociáveis.",
+                     "Sem ticket mínimo: atingir o alvo e caixa zero pode exigir ajustes pequenos.",
+                     "Limite por produto, não por emissor; compras RF são produtos distintos hipotéticos.",
+                     "Aprovação dos alvos numéricos não elimina revisões de categoria, produto e rating.",
+                     "Alternativa de seleção própria: cada ação limitada a 25% da cesta RV; nenhuma ação recomendada."])
 
 
-before = violations(value, value["CASH_BRL"])
-after_vals = dict(value)
-trades: list[Trade] = []
-proceeds = 0.0
-
-# --- 1. matured paper: redeem in full
-for i in value:
-    md = ins.loc[i, "maturity_date"]
-    if md and date.fromisoformat(md) < pack.period_end and after_vals[i] > 0:
-        amt = after_vals[i]; after_vals[i] = 0.0; proceeds += amt
-        trades.append(Trade(action="redeem", instrument_id=i, amount_brl=round(amt, 2),
-                            reason=f"Vencido em {md}; deixou de ser remunerado.",
-                            rule_id="NO_MATURED_HOLDINGS"))
-
-# --- 2. single-position ceiling
-for i in sorted(after_vals, key=lambda k: -after_vals[k]):
-    if ins.loc[i, "type"] == "cash":
-        continue
-    excess = after_vals[i] - cap_single
-    if excess > 1:
-        after_vals[i] -= excess; proceeds += excess
-        trades.append(Trade(action="sell", instrument_id=i, amount_brl=round(excess, 2),
-                            reason=(f"Reduz de {value[i]/invested_now*100:.2f}% do investido para "
-                                    f"o teto de {MAX_SINGLE:.2f}% medido sobre a carteira "
-                                    f"após o rebalanceamento."),
-                            rule_id="MAX_SINGLE_POSITION_PCT"))
-
-# --- 3. equity ceiling, reduced proportionally: choosing which stock to keep is
-#        a call the system has no basis to make, so it does not make one.
-eq_now = sum(v for k, v in after_vals.items() if is_equity[k])
-eq_before_pct = sum(v for k, v in value.items() if is_equity[k]) / invested_now * 100
-if eq_now - cap_equity > 1:
-    cut = eq_now - cap_equity
-    holders = sorted([k for k in after_vals if is_equity[k] and after_vals[k] > 0],
-                     key=lambda k: -after_vals[k])
-    # Proportional in spirit, but a proportional split of a small cut produces
-    # orders of a few tens of reais, where costs swamp the benefit. Anything
-    # under the declared minimum ticket is folded into the largest holding.
-    planned = {k: cut * after_vals[k] / eq_now for k in holders}
-    keep = {k: v for k, v in planned.items() if v >= MIN_TICKET}
-    residual = cut - sum(keep.values())
-    if not keep:
-        keep = {holders[0]: cut}; residual = 0.0
-    elif residual > 0:
-        big = max(keep, key=lambda k: keep[k]); keep[big] += residual
-    for i, amt in keep.items():
-        after_vals[i] -= amt; proceeds += amt
-        trades.append(Trade(action="sell", instrument_id=i, amount_brl=round(amt, 2),
-                            reason=(f"Reduz o balde de renda variável de {eq_before_pct:.2f}% "
-                                    f"para o teto de {MAX_EQUITY:.2f}% do investido."),
-                            rule_id="MAX_EQUITY_LOOKTHROUGH_PCT"))
-
-# --- 4. deploy: everything above the cash target goes to the one product family
-#        the client's own profile document names as compatible
-cash_now = after_vals["CASH_BRL"] + proceeds
-deployable = cash_now - cash_target
-if deployable > 1:
-    min_issuers = max(1, math.ceil(deployable / cap_single))
-    trades.append(Trade(action="buy", category=DEST, criteria=DEST_CRIT,
-                        amount_brl=round(deployable, 2), min_issuers=min_issuers,
-                        reason=(f"Com os recursos liberados o caixa chegaria a "
-                                f"{cash_now/total*100:.2f}% do patrimônio; a aplicação o leva a "
-                                f"{TARGET_CASH:.2f}%. Distribuir em pelo menos "
-                                f"{min_issuers} emissores para não violar o teto de "
-                                f"{MAX_SINGLE:.2f}% por instrumento."),
-                        rule_id="MAX_IDLE_CASH_PCT"))
-    after_vals["CASH_BRL"] = cash_target
-    # the new holdings, split to respect the ceiling
-    for n in range(min_issuers):
-        after_vals[f"NOVO_RF_{n+1}"] = deployable / min_issuers
-        ins.loc[f"NOVO_RF_{n+1}"] = ins.loc["FUND_TREND_INB"].copy()
-        ins.loc[f"NOVO_RF_{n+1}", "display_name"] = f"{DEST} — emissor {n+1}"
-        ins.loc[f"NOVO_RF_{n+1}", "maturity_date"] = ""
-        is_equity[f"NOVO_RF_{n+1}"] = False
-else:
-    after_vals["CASH_BRL"] = cash_now
-
-after = violations(after_vals, after_vals["CASH_BRL"])
-plan = RebalancePlan(
-    run_id=RUN_ID, client_id=pack.client_id, trades=trades,
-    proceeds_brl=round(proceeds, 2), deployable_brl=round(max(deployable, 0), 2),
-    cash_after_brl=round(after_vals["CASH_BRL"], 2),
-    violations_before=before, violations_after=after, resolved=not after)
-(OUT / "rebalance_plan.json").write_text(plan.model_dump_json(indent=2), encoding="utf-8")
+def main():
+    import pandas as pd
+    from context import OUT, REF
+    from contracts import MetricsPack, RecommendationSet
+    pack = MetricsPack.model_validate_json((OUT / "metrics_pack.json").read_text(encoding="utf-8"))
+    target = json.loads((OUT / "allocation_target.json").read_text(encoding="utf-8"))
+    recs = RecommendationSet.model_validate_json((OUT / "recommendations.json").read_text(encoding="utf-8"))
+    ins = pd.read_csv(REF / "instruments.csv", dtype=str).fillna("").set_index("instrument_id").to_dict("index")
+    cats = pd.read_csv(REF / "risk_categories.csv", dtype=str).fillna("").set_index("risk_category").to_dict("index")
+    params = pd.read_csv(REF / "rebalance_policy.csv", dtype=str).set_index("param")["value"].to_dict()
+    plan = build_plan(pack, ins, cats, target, params, recs)
+    (OUT / "rebalance_plan.json").write_text(plan.model_dump_json(indent=2), encoding="utf-8")
+    print(f"RV alvo: {target['target_rv_pct']:.2f}%; RF: {target['target_rf_pct']:.2f}%; caixa zero")
+    print(f"{len(plan.trades)} sugestões; alvos numéricos conferidos: {plan.resolved}; revisões pendentes: {len(plan.pending_reviews)}")
+    if not plan.resolved:
+        raise SystemExit(1)
 
 
-def br(v):
-    return f"{v:,.2f}".replace(",", "\x00").replace(".", ",").replace("\x00", ".")
-
-
-print(f"Violações antes ({len(before)}):")
-for v in before:
-    print(f"   • {v}")
-print(f"\nPlano — {len(trades)} operações, R$ {br(proceeds)} liberados:")
-for t in trades:
-    alvo = ins.loc[t.instrument_id, "display_name"] if t.instrument_id else \
-        f"{t.category} ({t.criteria})"
-    extra = f", em ≥{t.min_issuers} emissores" if t.min_issuers else ""
-    print(f"   [{t.action.upper():6}] {alvo:44} R$ {br(t.amount_brl):>14}{extra}")
-    print(f"            {t.reason}")
-print(f"\nCaixa após: R$ {br(plan.cash_after_brl)} ({plan.cash_after_brl/total*100:.2f}% do patrimônio)")
-print(f"\nViolações depois ({len(after)}):")
-for v in after:
-    print(f"   • {v}")
-print("\n" + ("PLANO RESOLVE TODAS AS VIOLAÇÕES" if plan.resolved
-              else "ATENÇÃO: o plano não resolve tudo — ver acima"))
+if __name__ == "__main__":
+    main()

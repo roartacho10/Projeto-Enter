@@ -19,6 +19,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from contracts import MetricsPack  # noqa: E402
+from allocation import MODEL_VERSION, fingerprint
 
 from context import (OUT, ROOT, client, period_id, period_bounds,  # noqa: E402
                      period_label, br_date)
@@ -52,6 +53,13 @@ def build_html(fit: float = 1.0, show_annex: bool = True) -> str:
     pack = MetricsPack.model_validate_json((OUT / "metrics_pack.json").read_text(encoding="utf-8"))
     figures = json.loads((OUT / "figures.json").read_text(encoding="utf-8"))
     letter = json.loads((OUT / "letter_sections.json").read_text(encoding="utf-8"))
+    generation_path = OUT / "generation_log.json"
+    generation = json.loads(generation_path.read_text(encoding="utf-8")) if generation_path.exists() else {}
+    allocation = json.loads((OUT / "allocation_target.json").read_text(encoding="utf-8"))
+    if (not generation.get("approved") or generation.get("model_version") != MODEL_VERSION
+            or generation.get("figures_fingerprint") != fingerprint(figures)
+            or generation.get("allocation_fingerprint") != allocation.get("fingerprint")):
+        raise ValueError("Carta antiga ou reprovada: gere outra carta com os dados atuais antes de renderizar")
 
     kpi_rows = [
         {"label": "Patrimônio total", "a": brmoney(pack.total_value_start),
@@ -97,18 +105,35 @@ def build_html(fit: float = 1.0, show_annex: bool = True) -> str:
     if plan_p.exists():
         plan = json.loads(plan_p.read_text(encoding="utf-8"))
         verbo = {"sell": "Vender", "redeem": "Resgatar", "buy": "Aplicar"}
+        rv_sales = [t for t in plan["trades"] if t["action"] == "sell" and t.get("asset_class") == "RV"]
+        if rv_sales:
+            trade_rows.append({"acao": "Sugerir venda", "alvo": "Todas as posições atuais de RV",
+                               "valor": brmoney(sum(t["amount_brl"] for t in rv_sales))})
         for t_ in plan["trades"]:
+            if t_ in rv_sales:
+                continue
             alvo = (ins.loc[t_["instrument_id"], "display_name"] if t_["instrument_id"]
                     else f"{t_['category']} — {t_['criteria']}")
-            if t_.get("min_issuers"):
-                alvo += f" (mín. {t_['min_issuers']} emissores)"
+            if t_.get("min_products"):
+                alvo += f" (mín. {t_['min_products']} produtos)"
             trade_rows.append({"acao": verbo[t_["action"]], "alvo": alvo,
                                "valor": brmoney(t_["amount_brl"])})
         # Client-facing wording. The mechanism behind the plan - the rules
         # engine, the count of breaches it cleared - belongs to the audit
         # trail in rebalance_plan.json, not to the person reading the letter.
-        plan_note = (f"Executadas as operações acima, a carteira volta aos limites do seu "
-                     f"perfil e o saldo em conta fica em {brmoney(plan['cash_after_brl'])}.")
+        plan_note = ("Sugestões sujeitas à aprovação do cliente. Na simulação, caixa zero e limites "
+                     "por produto atendidos; sem impostos, custos, liquidez ou lotes. "
+                     "RF: até 25% da cesta por produto. Seleção própria de ações: até 25% da cesta RV "
+                     "por ação; o fundo de índice pode ocupar toda a cesta RV e mantém risco de mercado.")
+        if plan.get("pending_reviews"):
+            plan_note += " Permanecem revisões de categorias de investimentos; conferir com o assessor."
+    allocation_note = (
+        f"Alvo pelo modelo: RV {brpct(allocation['target_rv_pct'])}, RF {brpct(allocation['target_rf_pct'])}, caixa zero. "
+        f"De {br_date(allocation['start'])} a {br_date(allocation['end'])}, retorno real estimado acumulado: "
+        f"RV {brpct(allocation['rv_real_cumulative_pct'])}; RF {brpct(allocation['rf_real_cumulative_pct'])}. "
+        "Estimativas por classe, sem impostos e custos: RV = PIB real + dividend yield assumido; "
+        "RF = Selic descontada do IPCA, usando a taxa de fim de ano como aproximação anual. "
+        "RF inclui crédito e multimercados com riscos diferentes.")
 
     half = (len(pos_rows) + 1) // 2
     pos_cols = [pos_rows[:half], pos_rows[half:]]
@@ -120,7 +145,7 @@ def build_html(fit: float = 1.0, show_annex: bool = True) -> str:
     doc["fit"] = f"{fit:.3f}"
     return tpl.render(doc=doc, letter=letter, figures=figures, kpi_rows=kpi_rows,
                       pos_cols=pos_cols, assets=assets, show_annex=show_annex,
-                      trade_rows=trade_rows, plan_note=plan_note,
+                      trade_rows=trade_rows, plan_note=plan_note, allocation_note=allocation_note,
                       charts={k: Markup(v) for k, v in charts.items()})
 
 
@@ -171,6 +196,11 @@ if __name__ == "__main__":
                  f"({OUT / 'letter_sections.json'} nao existe). "
                  f"Rode generate_letter.py antes.")
     html = build_html()
+    generation = json.loads((OUT / "generation_log.json").read_text(encoding="utf-8"))
+    receipt = {"generation_run_id": generation["run_id"], "pdf_ready": False, "html_ready": True}
+    def save_receipt(**extra):
+        (OUT / "layout_report.json").write_text(json.dumps({**receipt, **extra}, ensure_ascii=False, indent=2), encoding="utf-8")
+    save_receipt(html_ready=False)
     (OUT / "letter.html").write_text(html, encoding="utf-8")
     # The HTML is the source of truth; the PDF is a rendering of it. Three ways
     # to get a browser, tried in order: Playwright's own download, a browser
@@ -201,6 +231,7 @@ if __name__ == "__main__":
         print("AVISO: playwright ausente - PDF nao gerado e portao de layout nao executado.")
         print(f"html -> {OUT / 'letter.html'}")
         (OUT / "letter.html").write_text(build_html(), encoding="utf-8")
+        save_receipt(label="HTML disponível; conferência de layout não executada")
         sys.exit(0)
 
     chosen, overflow = None, None
@@ -212,6 +243,7 @@ if __name__ == "__main__":
                   "layout nao executado. Instale um Chromium do sistema (packages.txt) "
                   "ou rode: python -m playwright install chromium")
             print(f"html -> {OUT / 'letter.html'}")
+            save_receipt(label="HTML disponível; conferência de layout não executada")
             sys.exit(0)
         print(f"  usando {how}")
         pg = b.new_page()
@@ -243,6 +275,4 @@ if __name__ == "__main__":
     print(f"html -> {OUT / 'letter.html'}")
     print(f"pdf  -> {OUT / 'letter.pdf'}")
     print(f"LAYOUT OK: duas paginas, ajuste aplicado = {label}")
-    (OUT / "layout_report.json").write_text(
-        json.dumps({"fit": fit, "annex": annex, "label": label}, ensure_ascii=False, indent=2),
-        encoding="utf-8")
+    save_receipt(fit=fit, annex=annex, label=label, pdf_ready=True)

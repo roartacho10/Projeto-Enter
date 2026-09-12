@@ -1,0 +1,4 @@
+param,value,note
+DIVIDEND_YIELD_PCT,5,User-approved annual class-level assumption; not a measured yield or stock forecast
+SENSITIVITY_PP,10,User-approved cumulative real-return spread at which the macro factor reaches a boundary
+FORECAST_END,2026-12-31,Last year covered by the supplied research

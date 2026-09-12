@@ -93,6 +93,9 @@ def main() -> int:
         for name, desc in per_client:
             # A triage pass (--no-llm) over a client with no letter yet is a
             # normal state, not a failure: there is simply nothing to render.
+            if name == "render_pdf" and a.no_llm:
+                print(f"\n  (pulando {name}: gere uma nova carta para os dados atualizados)")
+                continue
             if name in NEEDS_LETTER and a.no_llm and not has_letter:
                 print(f"\n  (pulando {name} · {c}: nenhuma carta gerada ainda)")
                 continue

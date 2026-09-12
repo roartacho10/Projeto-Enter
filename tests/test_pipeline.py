@@ -73,8 +73,8 @@ def test_derived_policy_matches_the_matrix(ran):
     lim = pd.read_csv(ran / "data" / "reference" / "profile_limits.csv")
     cell = lim[(lim.risk_class == "Moderado") & (lim.horizon == "Medio")].iloc[0]
     assert float(pol.loc["MAX_EQUITY_LOOKTHROUGH_PCT", "threshold"]) == float(cell.max_equity_pct)
-    assert float(pol.loc["MAX_SINGLE_POSITION_PCT", "threshold"]) == float(cell.max_single_pct)
-    assert float(pol.loc["MAX_IDLE_CASH_PCT", "threshold"]) == float(cell.max_cash_pct)
+    assert float(pol.loc["MAX_SINGLE_POSITION_PCT", "threshold"]) == 25
+    assert float(pol.loc["MAX_IDLE_CASH_PCT", "threshold"]) == 0
     blocked = set(pol.loc["RESTRICTED_CATEGORY", "threshold"].split("|"))
     fam = pd.read_csv(ran / "data" / "reference" / "profile_families.csv").fillna("")
     expected = set(fam[(fam.risk_class == "Moderado") & (fam.allowed == 0)]["risk_category"])
@@ -101,13 +101,14 @@ def test_rebalance_clears_every_violation(ran):
         f"plano nao resolve: {plan['violations_after']}"
 
 
-def test_no_trade_below_the_minimum_ticket(ran):
-    """Seven orders of R$59 once reached the letter. Never again."""
+def test_cashflows_reproduce_the_published_plan(ran):
+    """Exact targets supersede the old minimum-ticket heuristic."""
     plan = stage_out(ran, "rebalance_plan.json")
-    rpol = pd.read_csv(ran / "data" / "reference" / "rebalance_policy.csv").set_index("param")
-    minimo = float(rpol.loc["MIN_TICKET_BRL", "value"])
-    small = [t for t in plan["trades"] if t["amount_brl"] < minimo]
-    assert not small, f"ordens abaixo do ticket minimo: {small}"
+    pack = stage_out(ran, "metrics_pack.json")
+    purchases = sum(round(t["amount_brl"] * 100) for t in plan["trades"] if t["action"] == "buy")
+    released = sum(round(t["amount_brl"] * 100) for t in plan["trades"] if t["action"] != "buy")
+    assert purchases == released + round(pack["cash_value"] * 100)
+    assert plan["cash_after_brl"] == 0
 
 
 def test_buy_orders_name_a_family_not_a_product(ran):
@@ -241,7 +242,8 @@ CLAIMS = [
     ("O CDB foi resgatado conforme o plano.", "claims_execution"),
     ("Vendemos parte da posicao em MRFG3.", "claims_execution"),
     ("Recomendo vender parte de MRFG3.", None),
-    ("Recomendo vender LREN3.", "claims_action"),
+    ("Recomendo vender LREN3.", None),
+    ("Recomendo comprar LREN3.", "claims_action"),
     # two subjects with opposite directions: ambiguous, skipped, not accused
     ("Apesar da queda de HAPV3, MRFG3 subiu com forca.", None),
     # the deepest one: an authorised figure attached to the wrong position

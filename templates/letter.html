@@ -141,6 +141,7 @@
     </figcaption>{{ charts.allocation }}</figure>
 
   <h2>Recomendações</h2>
+  <p class="body">{{ allocation_note }}</p>
   {% for para in letter.recommendations %}<p class="body">{{ para }}</p>{% endfor %}
 
   {% if trade_rows %}

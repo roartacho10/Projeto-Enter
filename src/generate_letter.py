@@ -22,6 +22,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from verify import verify  # noqa: E402
+from allocation import MODEL_VERSION, fingerprint
 
 try:
     from openai import OpenAI
@@ -99,6 +100,11 @@ pack = json.loads((OUT / "metrics_pack.json").read_text(encoding="utf-8"))
 recs = json.loads((OUT / "recommendations.json").read_text(encoding="utf-8"))
 plan_p = OUT / "rebalance_plan.json"
 plan = json.loads(plan_p.read_text(encoding="utf-8")) if plan_p.exists() else None
+allocation = json.loads((OUT / "allocation_target.json").read_text(encoding="utf-8"))
+if (not plan or plan.get("model_version") != MODEL_VERSION or not plan.get("resolved")
+        or plan.get("allocation_fingerprint") != allocation.get("fingerprint")
+        or allocation.get("metrics_run_id") != pack["run_id"]):
+    sys.exit("Atualize os dados antes de gerar a carta: plano ausente, antigo ou inconsistente.")
 macro_raw, profile_raw = read("macro_analysis.txt"), read("risk_profile.txt")
 
 # ---------------------------------------------------------- stage 1: macro
@@ -116,15 +122,16 @@ macro_summary = ask(
 fig_block = "\n".join(f"  {k} = {v}" for k, v in figures.items())
 def trade_line(t):
     alvo = t["instrument_id"] or f"{t['category']} ({t['criteria']})"
-    extra = f", distribuído em pelo menos {t['min_issuers']} emissores" if t.get("min_issuers") else ""
+    extra = f", distribuído em pelo menos {t['min_products']} produtos distintos" if t.get("min_products") else ""
     return f"  - {t['action'].upper()} {alvo}: R$ {t['amount_brl']:,.2f}{extra} | {t['reason']}"
 
 
 plan_block = ""
 if plan:
     plan_block = ("\n".join(trade_line(t) for t in plan["trades"])
-                  + f"\n  Após essas operações, nenhuma das {len(plan['violations_before'])} "
-                    "violações de suitability permanece.")
+                  + "\n  Numerical class targets and product caps pass the simulation. "
+                    "This is a suggestion, no trade has been executed. Pending reviews: "
+                  + json.dumps(plan.get("pending_reviews", []), ensure_ascii=False))
 
 rec_block = "\n".join(
     f"  - [{r['action']}] {r['observed']} | limite: {r['threshold']} | motivo: {r['rationale']}"
@@ -146,7 +153,7 @@ SYSTEM = (
 USER_TEMPLATE = f"""Write the monthly investment letter for the client.
 
 CLIENT: {_c["name"]}, addressed by first name. Risk profile: {_c["profile"]}. Advisor signing the letter: {_c["advisor"]}.
-PERIOD: April 2025 (from {pack['period_start']} to {pack['period_end']}).
+PERIOD: from {pack['period_start']} to {pack['period_end']}.
 
 AUTHORISED FIGURES (quote verbatim, never alter):
 {fig_block}
@@ -162,9 +169,25 @@ against different bases and swapping them changes the meaning.
 PROPOSED REBALANCE from the same rule engine. Present these as the concrete next
 steps, with their amounts, in the recommendations section. Say plainly that sells
 name instruments while the purchase names a product family and a credit criterion,
-because the specific issuer is chosen with the client. State that the plan clears
-every breach:
+because the specific product is chosen with the client. Never claim that every
+suitability finding is cleared; any pending category reviews still need assessment:
 {plan_block or "(sem plano)"}
+
+CLASS ALLOCATION MODEL (use only the authorised alocacao_* figures when quoting numbers):
+{json.dumps(allocation, ensure_ascii=False)}
+Explain that this is a model target, not a mathematically optimal portfolio or a
+return promise. Compare cumulative real class estimates over the SAME forecast
+window, not annual estimates with cumulative estimates. GDP + assumed dividend
+yield estimates RV; Selic deflated by IPCA estimates RF. Year-end Selic is used
+as an annual proxy. Estimates exclude taxes and costs and are NOT forecasts for
+individual positions, funds or stocks. The RF grouping includes credit and
+multimarket funds with different risks.
+Suggest selling current RV positions and using an unspecified Ibovespa index
+fund for the target RV basket. Do not name an ETF ticker or individual stocks to
+buy. An index fund may occupy the entire RV basket and remains exposed to market
+risk. If the client prefers stock picking, each stock is limited to the authorised
+MAX_SINGLE_POSITION_PCT percentage OF THE RV BASKET. The same cap applies per RF
+PRODUCT OF THE RF BASKET, not per issuer or total wealth. Target cash is zero.
 
 MACROECONOMIC CONTEXT (already summarised, do not add figures of your own).
 Use the authorised macro_* figures to make this section concrete rather than
@@ -201,7 +224,9 @@ headings, no bullets, no markdown, no figures beyond the authorised ones.
                  template adds the signature"
 }}
 
-Total length across all fields: about 450 words. Keep it tight; the layout is
+The deterministic template already prints class targets, cumulative estimates,
+product caps and trade amounts. Explain their rationale without duplicating
+these numbers in prose. Total length across all fields: about 280 words. Keep it tight; the layout is
 fixed at two pages and long prose breaks it."""
 
 def parse_sections(raw: str) -> dict:
@@ -257,6 +282,9 @@ for attempt in range(1, MAX_ATTEMPTS + 1):
     "run_id": RUN_ID, "model_draft": MODEL_DRAFT, "model_letter": MODEL_LETTER,
     "temperature": TEMPERATURE, "attempts": len(attempts),
     "approved": not [i for i in attempts[-1] if i[0] == "blocker"],
+    "model_version": MODEL_VERSION,
+    "figures_fingerprint": fingerprint(figures),
+    "allocation_fingerprint": allocation["fingerprint"],
     "usage": usage_log,
     "total_prompt_tokens": sum(u["prompt_tokens"] for u in usage_log),
     "total_completion_tokens": sum(u["completion_tokens"] for u in usage_log),
@@ -270,3 +298,8 @@ ok = not [i for i in attempts[-1] if i[0] == "blocker"]
 print(f"\ncarta -> {OUT / 'letter.txt'}   ({len(letter.split())} palavras, "
       f"{len(attempts)} tentativa(s))")
 print("APROVADA PELA VERIFICACAO" if ok else "REPROVADA apos todas as tentativas")
+(OUT / "verification_report.json").write_text(json.dumps(
+    [{"severity": sev, "code": code, "message": msg} for sev, code, msg in attempts[-1]],
+    ensure_ascii=False, indent=2), encoding="utf-8")
+if not ok:
+    sys.exit(1)

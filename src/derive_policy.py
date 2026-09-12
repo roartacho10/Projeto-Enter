@@ -6,7 +6,7 @@ statement apart.
 
 The risk-profile document says what the client is: moderate, seeking to protect
 purchasing power, over a medium horizon. It contains no numbers at all. Every
-limit in this system - 25% in equities, 15% in one name, 5% in cash - is a
+limit in this system - equity ceilings, per-basket product caps, zero cash - is a
 CALIBRATION, and pretending otherwise by citing a document section next to it
 would claim a precision the source does not have.
 
@@ -63,6 +63,7 @@ horizons = pd.read_csv(REF / "profile_horizon.csv", dtype=str).set_index("horizo
 limits = pd.read_csv(REF / "profile_limits.csv", dtype=str)
 families = pd.read_csv(REF / "profile_families.csv", dtype=str).fillna("")
 floors = pd.read_csv(REF / "profile_rating_floor.csv", dtype=str).set_index("risk_class")
+rpol = pd.read_csv(REF / "rebalance_policy.csv", dtype=str).set_index("param")
 
 if HORIZON not in horizons.index:
     fail(f"horizonte '{HORIZON}' nao esta em profile_horizon.csv")
@@ -86,11 +87,9 @@ DOC = (f"Perfil de Risco do cliente: \"{p['risk_class_quote'][:110]}\""
 
 rules = [
     {"rule_id": "MAX_IDLE_CASH_PCT", "rule_type": "idle_capital",
-     "threshold": cell["max_cash_pct"], "severity": "warning",
-     "rationale": (f"Objetivo declarado do cliente: {p['objective_quote'][:150]}. "
-                   f"Caixa parado nao cumpre esse objetivo. Com horizonte {HORIZON.lower()} "
-                   f"({years} anos), a reserva tolerada e menor do que seria num prazo curto."),
-     "policy_source": MATRIX, "source_type": "equivalencia"},
+     "threshold": rpol.loc["TARGET_CASH_PCT", "value"], "severity": "warning",
+     "rationale": "Caixa-alvo zero, conforme premissa aprovada para este case.",
+     "policy_source": "rebalance_policy.csv", "source_type": "equivalencia"},
 
     {"rule_id": "MAX_EQUITY_LOOKTHROUGH_PCT", "rule_type": "equity_lookthrough",
      "threshold": cell["max_equity_pct"], "severity": "warning",
@@ -100,10 +99,10 @@ rules = [
      "policy_source": MATRIX, "source_type": "equivalencia"},
 
     {"rule_id": "MAX_SINGLE_POSITION_PCT", "rule_type": "concentration",
-     "threshold": cell["max_single_pct"], "severity": "warning",
-     "rationale": (f"Limite por instrumento para o perfil {RISK}. Nao varia com o horizonte: "
-                   f"prazo maior nao torna uma carteira concentrada mais diversificada."),
-     "policy_source": MATRIX, "source_type": "equivalencia"},
+     "threshold": rpol.loc["MAX_PRODUCT_PCT", "value"], "severity": "warning",
+     "rationale": ("Limite por produto dentro da cesta RF; por ação dentro da cesta RV "
+                   "na alternativa de seleção própria. Fundo de índice Ibovespa isento."),
+     "policy_source": "rebalance_policy.csv", "source_type": "equivalencia"},
 
     {"rule_id": "NO_MATURED_HOLDINGS", "rule_type": "matured_instrument",
      "threshold": "0", "severity": "warning",
@@ -132,8 +131,8 @@ print(f"{CLIENT_ID}   {RISK}  ·  {p['objective']}  ·  horizonte {HORIZON} ({ye
       + ("   [horizonte ambiguo, adotada a ponta curta]" if p["horizon_ambiguous"] == "True" else ""))
 print("=" * 74)
 print(f"  renda variavel     max {cell['max_equity_pct']}%")
-print(f"  por instrumento    max {cell['max_single_pct']}%")
-print(f"  caixa              max {cell['max_cash_pct']}%")
+print(f"  por produto/cesta  max {rpol.loc['MAX_PRODUCT_PCT', 'value']}% (indice isento)")
+print(f"  caixa alvo         {rpol.loc['TARGET_CASH_PCT', 'value']}%")
 print(f"  rating minimo      {floor}")
 print(f"  familias vetadas   {', '.join(blocked) if blocked else '(nenhuma)'}")
 print(f"\n  origem: 1 regra operacional, {sum(r['source_type'] == 'equivalencia' for r in rules)} "
