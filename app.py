@@ -172,6 +172,23 @@ def load(cid: str, name: str):
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
 
 
+# Every pack field this screen reads. A run saved by an earlier build lacks
+# some of them - a deployed container keeps output/ across a code update - and
+# the app must offer to rebuild rather than crash. This was a literal set
+# buried in the detail section, so the client queue, which runs first and
+# reads the pack too, still died on a stale file. One list, checked once.
+PACK_FIELDS = {"total_value_end", "total_return_pct", "cash_pct_of_total_end",
+               "invested_return_pct", "cdi_return_pct", "ipca_return_pct",
+               "excess_over_cdi_pp", "real_return_total_pct",
+               "coverage_pct", "ibov_return_pct", "positions"}
+
+
+def current_pack(cid: str):
+    """The saved MetricsPack when this build can read it, otherwise None."""
+    pack = load(cid, "metrics_pack.json")
+    return pack if pack and PACK_FIELDS.issubset(pack) else None
+
+
 def run(stages, client=None, key=None, model=None) -> tuple[str | None, str]:
     """Runs the stages, returning the first failure and the full transcript."""
     env = dict(os.environ)
@@ -216,7 +233,7 @@ def queue() -> pd.DataFrame:
         if cid == ACTIVE:
             row["Carta"] = ((OUT / cid / "letter.pdf").exists()
                             or (OUT / cid / "letter.html").exists())
-            pack, rec = load(cid, "metrics_pack.json"), load(cid, "recommendations.json")
+            pack, rec = current_pack(cid), load(cid, "recommendations.json")
             if pack:
                 row |= {"Patrimônio": pack["total_value_end"],
                         "Retorno": pack["total_return_pct"],
@@ -321,12 +338,10 @@ cid = ACTIVE
 name = active["Cliente"]
 st.markdown(f'<p class="sectitle">{name}</p>', unsafe_allow_html=True)
 
-pack, rec = load(cid, "metrics_pack.json"), load(cid, "recommendations.json")
+pack, rec = current_pack(cid), load(cid, "recommendations.json")
 plan, rep = load(cid, "rebalance_plan.json"), load(cid, "verification_report.json")
-if pack and not {"cdi_return_pct", "ipca_return_pct", "real_return_total_pct",
-                 "excess_over_cdi_pp", "cash_pct_of_total_end"}.issubset(pack):
+if pack is None and load(cid, "metrics_pack.json"):
     st.info("Os cálculos salvos usam um formato antigo. Use Atualizar dados para reconstruí-los.")
-    pack = None
 allocation = load(cid, "allocation_target.json")
 current_plan = bool(pack and allocation and plan and plan.get("model_version") == MODEL_VERSION
                     and allocation.get("metrics_run_id") == pack.get("run_id")
