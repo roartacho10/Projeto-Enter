@@ -130,9 +130,30 @@ def test_real_case_uses_new_target_and_preserves_base(ran):
     assert p["cash_after_brl"] == 0
 
 
-def test_streamlit_displays_the_new_targets_and_hides_old_reports(ran):
+def _desk(repo):
+    """The app past the entry screen. Entering runs the triage stages, which
+    the `ran` fixture has already run, so the tests skip straight to the desk."""
+    from streamlit.testing.v1 import AppTest
+    app = AppTest.from_file(str(repo / "app.py"))
+    app.session_state["entrou"] = True
+    return app.run(timeout=45)
+
+
+def test_streamlit_opens_on_the_entry_screen(ran):
+    """No password, but nothing of the book is visible before Acessar."""
     from streamlit.testing.v1 import AppTest
     app = AppTest.from_file(str(ran / "app.py")).run(timeout=45)
+    assert not app.exception, [e.message for e in app.exception]
+    assert [b for b in app.button if b.label == "Acessar"], "sem botao de acesso"
+    assert not [b for b in app.button if b.label.startswith("Gerar relatório de")], \
+        "a mesa apareceu antes do acesso"
+    assert not app.metric, "numeros do cliente visiveis antes do acesso"
+    assert any(i.value == "Antonio Bicudo" for i in app.text_input), \
+        "o nome do assessor nao veio preenchido"
+
+
+def test_streamlit_displays_the_new_targets_and_hides_old_reports(ran):
+    app = _desk(ran)
     assert not app.exception, [e.message for e in app.exception]
     labels = {m.label: m.value for m in app.metric}
     assert labels["Caixa · alvo"] == "0,00%"
@@ -165,7 +186,6 @@ def test_streamlit_can_open_legacy_results_and_request_refresh(ran, missing):
     A deployed container keeps output/ across a code update, so this is the
     normal state after every release, not an edge case.
     """
-    from streamlit.testing.v1 import AppTest
     from conftest import CLIENT
     path = ran / "output" / CLIENT / "metrics_pack.json"
     original = path.read_bytes()
@@ -173,7 +193,7 @@ def test_streamlit_can_open_legacy_results_and_request_refresh(ran, missing):
         old = json.loads(original)
         del old[missing]
         path.write_text(json.dumps(old), encoding="utf-8")
-        app = AppTest.from_file(str(ran / "app.py")).run(timeout=45)
+        app = _desk(ran)
         assert not app.exception, [e.message for e in app.exception]
         assert any("formato antigo" in i.value for i in app.info)
         assert next(b for b in app.button if b.label.startswith("Gerar relatório de")).disabled

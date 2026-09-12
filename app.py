@@ -254,16 +254,54 @@ _period = str(_crow["period"]).strip()
 _mes, _ano = period_label(_period)
 _ini, _fim = period_bounds(_period)
 
-st.markdown(f"""
+
+def band(sub: str = "") -> None:
+    """The brand strip, shared by the entry screen and the desk."""
+    st.markdown(f"""
 <div class="band">
   <div>
     <p class="eyebrow">XP Investimentos</p>
     <h1>Relatórios mensais</h1>
-    <p class="sub">{_crow["advisor"]} · Código {_crow["advisor_code"]} · Período de
-       referência: {_mes.lower()} de {_ano}</p>
+    {f'<p class="sub">{sub}</p>' if sub else ''}
   </div>
   <img src="{logo_uri()}" alt="XP">
 </div>""", unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------------- entry
+# A screen before the desk. There is no password and none is implied: this is
+# a demonstration, and a login that verifies nothing should not dress itself
+# up as one that does. What the button actually does is the work - it runs the
+# same triage the desk's "Atualizar dados" runs, so the portfolio that opens
+# has been priced and re-checked in front of the user rather than served from
+# whatever a previous session happened to leave on disk.
+if not st.session_state.get("entrou"):
+    band()
+    # The card spans the same column as the brand strip above it, so the two
+    # share one left and right edge. Boxed in a narrower centre column it read
+    # as a widget dropped on the page rather than as the page itself.
+    with st.container(border=True):
+        st.markdown("##### Acesso do assessor")
+        f = st.columns([2, 1, 1], vertical_alignment="bottom")
+        f[0].text_input("Assessor", value=str(_crow["advisor"]), key="entrada_assessor")
+        f[1].text_input("Código", value=str(_crow["advisor_code"]), disabled=True,
+                        key="entrada_codigo")
+        entrar = f[2].button("Acessar", type="primary", width="stretch")
+    if entrar:
+        failed, log = run(TRIAGE, ACTIVE)
+        st.session_state["log"] = log
+        if failed:
+            st.error(f"Não foi possível abrir a carteira: falhou em {failed}.")
+            with st.expander("Detalhes técnicos"):
+                st.code(log, language="text")
+        else:
+            st.session_state["entrou"] = True
+            st.cache_data.clear()
+            st.rerun()
+    st.stop()
+
+band(f'{_crow["advisor"]} · Código {_crow["advisor_code"]} · '
+     f'Período de referência: {_mes.lower()} de {_ano}')
 
 with st.sidebar:
     st.markdown("#### Configuração")
