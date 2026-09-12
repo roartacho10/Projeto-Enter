@@ -117,10 +117,6 @@ st.markdown("""
   .fl {color:#9A9A98;}
   /* A distance to a target is not a gain or a loss: neutral on purpose. */
   .gap {color:#5A5A5A; font-weight:600;}
-  /* The line that turns the inputs above it into the target below it. */
-  .implica {border-left:3px solid #FFC700; background:#FFFCF2; padding:.6rem .9rem;
-            margin:.6rem 0 .2rem; font-size:.9rem; line-height:1.5;}
-  .implica b {color:#1A1A1A;}
   .chart {margin:.5rem 0 .3rem;}
   .chart svg {width:100%; height:auto; max-width:900px;}
   div[data-testid="stMetricValue"] {font-size:1.35rem;}
@@ -506,27 +502,7 @@ else:
                "CDI e IPCA são retornos do mês, comparáveis à coluna de variação, "
                "e não saldos em carteira.")
 
-    st.markdown("**Leituras do período**")
-    # Two declared references, never blended: the CDI answers whether the risk
-    # paid, the IPCA whether the money kept its purchasing power.
-    st.markdown('<div class="state">' + "".join(
-        f'<div class="r"><span class="k">{k}</span><span class="v">{v}</span></div>'
-        for k, v in [
-            ("Investido acima do CDI", contrib(pack["excess_over_cdi_pp"])),
-            ("Patrimônio deflacionado pelo IPCA", trend(pack["real_return_total_pct"])),
-            ("Ibovespa", f'<em>{pct(pack["ibov_return_pct"])}</em> · contexto de mercado, '
-                         'não parâmetro desta carteira'),
-            ("Cobertura de marcação", f'<em>{pct(pack["coverage_pct"])}</em> do investido'),
-        ]) + "</div>", unsafe_allow_html=True)
-
-    lim = limits(cid)
-
 # --------------------------------------------------------- profile and basis
-# Three blocks used to sit here: the findings, the model's target, and the
-# readings behind it, each answering a different question and none saying how
-# they connected. They are one argument, so they are laid out as one: who the
-# client is and what the scenario says, then what that implies, then where the
-# book stands against it.
 if pack and allocation:
     st.markdown('<p class="sectitle">Perfil e base da análise</p>', unsafe_allow_html=True)
     prof = profiles().loc[cid] if cid in profiles().index else None
@@ -538,44 +514,9 @@ if pack and allocation:
     ]
     if prof is not None and prof["objective_quote"]:
         linhas_perfil.append(("Objetivo declarado", f'“{prof["objective_quote"]}”'))
-    linhas_perfil += [
-        ("Janela projetada", f'de {br_date(allocation["start"])} a {br_date(allocation["end"])}'),
-        ("Retorno real estimado",
-         f'RV <em>{pct(allocation["rv_real_cumulative_pct"])}</em> · '
-         f'RF <em>{pct(allocation["rf_real_cumulative_pct"])}</em> · '
-         f'diferença {contrib(allocation["spread_pp"])}'),
-    ]
     st.markdown('<div class="state">' + "".join(
         f'<div class="r"><span class="k">{k}</span><span class="v">{v}</span></div>'
         for k, v in linhas_perfil) + "</div>", unsafe_allow_html=True)
-
-    # Unsigned: the sentence already says which class is ahead, and a "+"
-    # after "supera em" reads as a second sign on the same fact.
-    _dif = f"{abs(allocation['spread_pp']):.2f}".replace(".", ",")
-    st.markdown(
-        f'<div class="implica">A renda fixa estimada supera a variável em '
-        f'{_dif} p.p. no acumulado da janela, o que leva o fator macro a '
-        f'<b>{allocation["macro_factor"]:.4f}</b> — abaixo de 0,5, o ponto de empate. '
-        f'Aplicado ao teto de {pct(allocation["rv_ceiling_pct"])}, isso implica um alvo de '
-        f'<b>{pct(allocation["target_rv_pct"])} em renda variável</b>, '
-        f'{pct(allocation["target_rf_pct"])} em renda fixa e caixa zero.</div>',
-        unsafe_allow_html=True)
-
-    if prof is not None and str(prof["horizon_ambiguous"]).lower() == "true" and prof["note"]:
-        st.caption(prof["note"])
-
-    with st.expander("Cenário, fórmula e premissas"):
-        st.dataframe(pd.DataFrame([{
-            "Ano": r["year"], "Meses considerados": r["months"],
-            "PIB real": pct(r["pib"]), "IPCA": pct(r["ipca"]), "Selic": pct(r["selic"]),
-            "RV real anual estimada": pct(r["rv_real_pct"]),
-            "RF real anual estimada": pct(r["rf_real_pct"]),
-        } for r in allocation["annual"]]), hide_index=True, width="stretch")
-        st.write("Alvo RV = teto × limitar(0,5 + diferença / (2 × sensibilidade), entre 0 e 1). "
-                 f"Sensibilidade: {allocation['sensitivity_pp']:g} p.p. acumulados. "
-                 f"Dividend yield assumido: {pct(allocation['dividend_yield_pct'])} ao ano.")
-        for assumption in allocation["assumptions"]:
-            st.write("— " + assumption)
 
 # --------------------------------------------------------- current vs target
 if pack and plan and plan.get("class_mix"):
@@ -610,9 +551,7 @@ if pack and plan and plan.get("class_mix"):
         '<table class="mtable"><thead><tr><th>Classe</th><th>Hoje</th>'
         '<th>Hoje %</th><th>Alvo %</th><th>Distância</th></tr></thead>'
         f'<tbody>{corpo}</tbody></table>', unsafe_allow_html=True)
-    st.caption("Todas as participações sobre o patrimônio total de "
-               f"{br_date(_fim)} — a mesma base nas três colunas. A simulação preserva "
-               "o patrimônio, então o alvo também é a carteira depois do ajuste.")
+    st.caption(f"Percentuais sobre o patrimônio de {br_date(_fim)}; alvo = carteira após o ajuste.")
 
     if plan.get("concentration"):
         def contra_limite(valor, limite):
