@@ -685,7 +685,8 @@ if current_letter and html_p.exists():
             attachments.insert(0, (f"relatorio_{cid.lower()}.pdf", pdf_p.read_bytes(), "application/pdf"))
         try:
             with st.spinner("Enviando relatório..."):
-                send_report(recipient.strip(), attachments, settings)
+                send_report(recipient.strip(), attachments, settings,
+                            client_name=name, advisor_name=str(_crow["advisor"]))
             st.success("Relatório enviado ao servidor de e-mail.")
         except ValueError as exc:
             st.error(str(exc))
