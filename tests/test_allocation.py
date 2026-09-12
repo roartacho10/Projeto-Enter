@@ -247,11 +247,58 @@ def test_references_show_only_a_variation_never_a_balance(ran):
 def test_streamlit_displays_the_new_targets_and_hides_old_reports(ran):
     app = _desk(ran)
     assert not app.exception, [e.message for e in app.exception]
-    labels = {m.label: m.value for m in app.metric}
-    assert labels["Caixa · alvo"] == "0,00%"
-    assert "Renda variável · alvo" in labels and "Renda fixa · alvo" in labels
+    html = "".join(str(m.value) for m in app.markdown)
+    target = stage_out(ran, "allocation_target.json")
+    for chave in ("target_rv_pct", "target_rf_pct", "target_cash_pct"):
+        esperado = f"{target[chave]:.2f}".replace(".", ",") + "%"
+        assert esperado in html, f"alvo {chave} ({esperado}) ausente da tela"
     button = next(b for b in app.button if b.label.startswith("Gerar relatório de"))
     assert not button.disabled
+
+
+def test_current_and_target_are_measured_against_the_same_base(ran):
+    """
+    The comparison these columns replaced was not comparable: the equity rule
+    measures against the invested balance and the class target is applied to
+    total wealth, and both were on screen as plain percentages. Now every
+    share in the table is of the closing patrimony, each column adds to 100,
+    and the rule's own base is named where it differs.
+    """
+    plan = stage_out(ran, "rebalance_plan.json")
+    pack = stage_out(ran, "metrics_pack.json")
+    mix = plan["class_mix"]
+    assert {r["asset_class"] for r in mix} == {"RV", "RF", "CASH"}
+    for coluna in ("before_pct", "target_pct", "after_pct"):
+        assert sum(r[coluna] for r in mix) == pytest.approx(100, abs=0.02), \
+            f"a coluna {coluna} nao soma o patrimonio inteiro"
+    for r in mix:
+        assert r["before_pct"] == pytest.approx(
+            r["before_brl"] / pack["total_value_end"] * 100, abs=0.02)
+    target = stage_out(ran, "allocation_target.json")
+    alvo = {r["asset_class"]: r["target_pct"] for r in mix}
+    assert alvo["RV"] == pytest.approx(target["target_rv_pct"], abs=0.02)
+    assert alvo["CASH"] == 0
+    app = _desk(ran)
+    html = "".join(str(m.value) for m in app.markdown)
+    rec = stage_out(ran, "recommendations.json")
+    assert "base do teto de suitability" in html, \
+        "a tela nao diz que o teto de RV mede contra outra base"
+    assert f"{rec['equity_lookthrough_pct']:.2f}".replace(".", ",") + "%" in html
+
+
+def test_an_index_fund_basket_is_not_reported_as_a_breach(ran):
+    """
+    After the migration the RV basket is a single index fund, which the policy
+    exempts from the per-product cap. Reporting it as 100% of the basket
+    against a 25% limit would invent a violation the plan does not have.
+    """
+    plan = stage_out(ran, "rebalance_plan.json")
+    rv = next((c for c in plan["concentration"] if c["asset_class"] == "RV"), None)
+    assert rv is not None and rv["after_pct"] is None
+    assert "isento" in rv["note"]
+    assert plan["resolved"] and not plan["violations_after"]
+    rf = next(c for c in plan["concentration"] if c["asset_class"] == "RF")
+    assert rf["after_pct"] <= rf["limit_pct"] + 0.01, "a cesta RF passou do limite por produto"
 
 
 def _pack_fields() -> list[str]:

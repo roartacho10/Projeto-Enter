@@ -48,6 +48,29 @@ def build_plan(pack, instruments, categories, target, params, recommendations) -
         raise ValueError("RF target too small to split into valid cent-denominated products")
     current_rv = sum(p["cents"] for p in positions.values() if p["asset_class"] == "RV")
     initial_cash = sum(p["cents"] for p in positions.values() if p["asset_class"] == "CASH")
+
+    # Snapshot before anything is mutated: `positions` becomes the simulated
+    # book below, so the current mix has to be read here or not at all.
+    def _by_class(pos):
+        return {k: sum(p["cents"] for p in pos.values() if p["asset_class"] == k)
+                for k in ("RV", "RF", "CASH")}
+
+    def _largest(pos, kind, basket_cents):
+        """
+        Largest single product as a share of its own basket. Index funds are
+        skipped because the per-product cap does not apply to them: after the
+        migration the RV basket is one index fund, and reporting it as 100% of
+        the basket against a 25% limit would show a breach that the policy
+        explicitly exempts. None means the basket holds nothing the cap binds.
+        """
+        vals = [p["cents"] for p in pos.values()
+                if p["asset_class"] == kind and p["cents"] > 0 and not p["index_fund"]]
+        if not vals or basket_cents <= 0:
+            return None
+        return round(max(vals) / basket_cents * 100, 2)
+
+    before_cents = _by_class(positions)
+    largest_before = {k: _largest(positions, k, before_cents[k]) for k in ("RV", "RF")}
     trades, proceeds = [], 0
     before = []
     if initial_cash:
@@ -131,12 +154,34 @@ def build_plan(pack, instruments, categories, target, params, recommendations) -
                and positions[r.instrument_id]["cents"] > 0]
     post = [{**{k: v for k, v in p.items() if k != "cents"}, "value_brl": p["cents"] / 100}
             for p in positions.values() if p["cents"]]
+
+    after_cents = _by_class(positions)
+    largest_after = {k: _largest(positions, k, after_cents[k]) for k in ("RV", "RF")}
+    alvo_cents = {"RV": rv_target, "RF": rf_target, "CASH": 0}
+    rotulos = {"RV": "Renda variável", "RF": "Renda fixa", "CASH": "Caixa"}
+    # One base for all three columns: the closing patrimony, which the
+    # simulation preserves, so the shares are comparable line by line.
+    mix = [{"asset_class": k, "label": rotulos[k],
+            "before_brl": before_cents[k] / 100, "before_pct": round(before_cents[k] / total * 100, 2),
+            "target_brl": alvo_cents[k] / 100, "target_pct": round(alvo_cents[k] / total * 100, 2),
+            "after_brl": after_cents[k] / 100, "after_pct": round(after_cents[k] / total * 100, 2)}
+           for k in ("RV", "RF", "CASH")]
+    conc = []
+    for k in ("RV", "RF"):
+        if largest_before[k] is None and largest_after[k] is None:
+            continue
+        nota = ""
+        if largest_after[k] is None and after_cents[k]:
+            nota = "cesta migrada para fundo de índice, isento do limite por produto"
+        conc.append({"asset_class": k, "label": f"Maior produto da cesta {rotulos[k].lower()}",
+                     "before_pct": largest_before[k], "after_pct": largest_after[k],
+                     "limit_pct": product_pct, "note": nota})
     return RebalancePlan(
         run_id=datetime.now(timezone.utc).strftime("run_%Y%m%dT%H%M%SZ"), client_id=pack.client_id,
         trades=trades, proceeds_brl=proceeds / 100, deployable_brl=invested_buy / 100,
         cash_after_brl=0, violations_before=before, violations_after=after, resolved=not after,
         model_version=MODEL_VERSION, allocation_fingerprint=target["fingerprint"],
-        post_positions=post, pending_reviews=pending,
+        post_positions=post, class_mix=mix, concentration=conc, pending_reviews=pending,
         assumptions=["Simulação em valores monetários, sem impostos, custos, liquidez ou lotes negociáveis.",
                      "Sem ticket mínimo: atingir o alvo e caixa zero pode exigir ajustes pequenos.",
                      "Limite por produto, não por emissor; compras RF são produtos distintos hipotéticos.",
