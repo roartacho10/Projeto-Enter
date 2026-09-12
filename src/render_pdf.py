@@ -145,7 +145,12 @@ def build_html(fit: float = 1.0, show_annex: bool = True, macro_first: bool = Fa
     tpl = env.get_template("letter.html")
     from markupsafe import Markup
     doc["fit"] = f"{fit:.3f}"
+    fonts = {weight: "data:font/ttf;base64," + base64.b64encode(
+        (ASSETS / "fonts" / filename).read_bytes()).decode()
+        for weight, filename in (("regular", "LiberationSans-Regular.ttf"),
+                                 ("bold", "LiberationSans-Bold.ttf"))}
     return tpl.render(doc=doc, letter=letter, figures=figures, kpi_rows=kpi_rows,
+                      fonts=fonts,
                       pos_cols=pos_cols, assets=assets, show_annex=show_annex, macro_first=macro_first,
                       trade_rows=trade_rows, plan_note=plan_note, allocation_note=allocation_note,
                       charts={k: Markup(v) for k, v in charts.items()})
@@ -182,6 +187,7 @@ def measure(page, html: str) -> list[dict]:
     last flowed element against the top of the footer.
     """
     page.set_content(html, wait_until="load")
+    page.evaluate("document.fonts.ready")
     return page.evaluate("""() => [...document.querySelectorAll('.page')]
         .map((el, i) => {
           const over = Math.round(el.scrollHeight - el.clientHeight);

@@ -609,17 +609,14 @@ with st.expander("Configura\u00e7\u00e3o do relat\u00f3rio"):
     st.markdown("#### Configuração")
     key, key_src = ambient_key()
     if key:
-        st.caption(f"Chave da OpenAI: configurada ({key_src}).")
-        with st.expander("Usar outra chave"):
-            override = st.text_input("Chave da OpenAI", type="password", placeholder="sk-...",
-                                     label_visibility="collapsed", key="key_override",
-                                     help="Vale só para esta sessão do navegador.")
-            key = override or key
+        st.caption("OpenAI configurada. A chave salva é usada automaticamente em cada relatório.")
     else:
         key = st.text_input("Chave da OpenAI", type="password", placeholder="sk-...",
                             key="key_sidebar",
                             help="Para não precisar digitar de novo, configure "
                                  "OPENAI_API_KEY no ambiente ou em .streamlit/secrets.toml.")
+        st.caption("Para salvar uma vez só, acrescente OPENAI_API_KEY nos Secrets do Streamlit, "
+                   "junto das configurações do Gmail. O campo acima é apenas para uso temporário.")
 
     model = secret("MODEL_LETTER") or DEFAULT_MODEL
     st.caption(f"Modelo de redação: **{model}**")

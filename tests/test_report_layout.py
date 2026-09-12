@@ -42,6 +42,9 @@ def test_production_letter_fits_two_pages(ran, monkeypatch, fixture):
                     attempts.append((label, overflow))
                     if not overflow:
                         assert page.locator(".page").count() == 2
+                        assert page.evaluate("document.fonts.check('12px ReportSans')")
+                        assert page.locator("figure svg text").evaluate_all(
+                            "els => els.every(el => getComputedStyle(el).fontFamily.includes('ReportSans'))")
                         for paragraph in paragraphs[:-1]:
                             assert paragraph in page.locator("body").inner_text()
                         assert page.get_by_text(sections["macro"], exact=True).count() == 1
@@ -49,6 +52,7 @@ def test_production_letter_fits_two_pages(ran, monkeypatch, fixture):
                         if os.environ.get("ENTER_LAYOUT_QA_DIR"):
                             qa = Path(os.environ["ENTER_LAYOUT_QA_DIR"])
                             qa.mkdir(parents=True, exist_ok=True)
+                            page.pdf(path=str(qa / f"{Path(fixture).stem}.pdf"), format="A4", print_background=True)
                             for i, sheet in enumerate(page.locator(".page").all(), 1):
                                 sheet.screenshot(path=str(qa / f"{Path(fixture).stem}-{i}.png"))
                         break
