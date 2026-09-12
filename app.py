@@ -94,8 +94,8 @@ st.markdown("""
   .state .r .k {color:#5A5A5A;}
   .state .r .v {white-space:nowrap; color:#5A5A5A;}
   .state .r .v em {font-style:normal; font-weight:700; color:#1A1A1A;}
-  /* One table for the month: two dated columns, the variation between them,
-     and what each line contributed to the portfolio's result. */
+  /* One table for the month: two dated columns and the variation between
+     them, for the totals, every position and the references. */
   .mtable {width:100%; border-collapse:collapse; font-size:.86rem; margin:1rem 0 .3rem;}
   .mtable th {text-align:right; font-weight:600; color:#7A7A7A; font-size:.72rem;
               text-transform:uppercase; letter-spacing:.05em; white-space:nowrap;
@@ -437,10 +437,9 @@ else:
     # the letter.
     names = instruments()["display_name"].to_dict()
 
-    def linha(rotulo, v0, v1, var, ct=None, classe=""):
-        c = contrib(ct) if ct is not None else '<span class="fl">–</span>'
+    def linha(rotulo, v0, v1, var, classe=""):
         return (f'<tr class="{classe}"><td>{rotulo}</td><td>{brl(v0)}</td>'
-                f'<td>{brl(v1)}</td><td>{trend(var)}</td><td>{c}</td></tr>')
+                f'<td>{brl(v1)}</td><td>{trend(var)}</td></tr>')
 
     def linha_ref(rotulo, var):
         """
@@ -450,7 +449,7 @@ else:
         which is the whole reason for putting these rows in the same table.
         """
         return (f'<tr><td>{rotulo}</td><td class="na">—</td><td class="na">—</td>'
-                f'<td>{trend(var)}</td><td><span class="fl">–</span></td></tr>')
+                f'<td>{trend(var)}</td></tr>')
 
     corpo = linha("Patrimônio", pack["total_value_start"], pack["total_value_end"],
                   pack["total_return_pct"], classe="tot")
@@ -469,34 +468,30 @@ else:
         if not doo:
             continue
         vistas.update(m["instrument_id"] for m in doo)
-        corpo += f'<tr class="grp"><td colspan="5">{titulo}</td></tr>'
+        corpo += f'<tr class="grp"><td colspan="4">{titulo}</td></tr>'
         for m in doo:
             corpo += linha(names.get(m["instrument_id"], m["instrument_id"]),
-                           m["value_start"], m["value_end"], m["return_pct"],
-                           m["contribution_pp"])
+                           m["value_start"], m["value_end"], m["return_pct"])
     # A holding whose type matches no group is shown, not dropped: a position
     # missing from the table would be a silent omission from the client's book.
     restantes = [m for m in posicoes if m["instrument_id"] not in vistas]
     if restantes:
-        corpo += '<tr class="grp"><td colspan="5">Outros</td></tr>'
+        corpo += '<tr class="grp"><td colspan="4">Outros</td></tr>'
         for m in restantes:
             corpo += linha(names.get(m["instrument_id"], m["instrument_id"]),
-                           m["value_start"], m["value_end"], m["return_pct"],
-                           m["contribution_pp"])
-    corpo += '<tr class="grp"><td colspan="5">Referências do mês</td></tr>'
+                           m["value_start"], m["value_end"], m["return_pct"])
+    corpo += '<tr class="grp"><td colspan="4">Referências do mês</td></tr>'
     corpo += linha_ref("CDI", pack["cdi_return_pct"])
     corpo += linha_ref("IPCA", pack["ipca_return_pct"])
 
     st.markdown(
         '<table class="mtable"><thead><tr><th>Métrica</th>'
         f'<th>{br_date(_ini)}</th><th>{br_date(_fim)}</th>'
-        '<th>Variação</th><th>Contribuição</th></tr></thead>'
+        '<th>Variação</th></tr></thead>'
         f'<tbody>{corpo}</tbody></table>', unsafe_allow_html=True)
     st.caption(f"Variação de cada linha entre {br_date(_ini)} e {br_date(_fim)}. "
-               "Contribuição é o efeito da posição sobre o resultado do patrimônio, "
-               f"medida sobre o patrimônio de {br_date(_ini)} — por isso as "
-               "contribuições somam o retorno do patrimônio. CDI e IPCA são retornos "
-               "do mês, comparáveis à coluna de variação, e não saldos em carteira.")
+               "CDI e IPCA são retornos do mês, comparáveis à coluna de variação, "
+               "e não saldos em carteira.")
 
     st.markdown("**Leituras do período**")
     # Two declared references, never blended: the CDI answers whether the risk
