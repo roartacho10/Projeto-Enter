@@ -98,7 +98,15 @@ class PositionMetric(BaseModel):
     value_start: float
     value_end: float
     return_pct: float
-    weight_pct: float
+    # Two weights, each with its base in the name. The opening weight is the
+    # one attribution needs (contribution_pp is measured against the opening
+    # total, which is why the contributions add up to the total return); the
+    # closing weight is the one that describes the portfolio as it stands and
+    # is the only one that reconciles with value_end. They were a single
+    # ambiguous `weight_pct` and the report printed the opening weight beside
+    # a closing value, under a heading naming the closing date.
+    weight_start_pct: float
+    weight_end_pct: float
     contribution_pp: float
     pricing_note: str = ""
 
@@ -120,7 +128,11 @@ class MetricsPack(BaseModel):
     invested_value_end: float
     invested_return_pct: float
     cash_value: float
-    cash_pct_of_total: float
+    # Share of the CLOSING patrimony, the base the suitability rule and the
+    # screen both measure against. It used to be a share of the opening
+    # patrimony under a name that declared no base, so the letter quoted
+    # 18,92% while the rule that fired quoted 18,18% for the same balance.
+    cash_pct_of_total_end: float
     # Two declared references, never blended. A weighted mix of CDI and
     # Ibovespa was invented here and no document supported it; worse, it
     # averaged a cash rate with an equity index into one figure that describes

@@ -56,6 +56,67 @@ def test_contributions_reconcile_with_the_total(ran):
     assert soma == pytest.approx(pack["total_return_pct"], abs=0.02)
 
 
+def test_each_weight_reconciles_with_its_own_base(ran):
+    """
+    Two weights, two bases, each internally consistent. The report printed the
+    opening weight beside the closing value under a heading naming the closing
+    date, so a reader dividing the two got a third number. Both bases are
+    checked here because the fix is only safe while both stay true.
+    """
+    pack = stage_out(ran, "metrics_pack.json")
+    t0, t1 = pack["total_value_start"], pack["total_value_end"]
+    for m in pack["positions"]:
+        assert m["weight_end_pct"] == pytest.approx(m["value_end"] / t1 * 100, abs=0.01), \
+            f"{m['instrument_id']}: peso de fim nao bate com o valor de fim"
+        assert m["weight_start_pct"] == pytest.approx(m["value_start"] / t0 * 100, abs=0.01), \
+            f"{m['instrument_id']}: peso de inicio nao bate com o valor de inicio"
+    assert sum(m["weight_end_pct"] for m in pack["positions"]) == pytest.approx(100, abs=0.01)
+    assert sum(m["weight_start_pct"] for m in pack["positions"]) == pytest.approx(100, abs=0.01)
+
+
+def test_the_published_weight_is_the_closing_one(ran):
+    """
+    What the letter and the PDF may quote is the weight that matches the value
+    printed next to it. peso_X must equal valor_X divided by the closing
+    patrimony - the figure sheet is where the two would silently diverge.
+    """
+    pack = stage_out(ran, "metrics_pack.json")
+    fig = stage_out(ran, "figures.json")
+
+    def num(s):
+        return float(s.replace("R$ ", "").replace("%", "").replace(".", "").replace(",", "."))
+
+    total = num(fig["patrimonio_fim"])
+    for m in pack["positions"]:
+        iid = m["instrument_id"]
+        assert num(fig[f"peso_{iid}"]) == pytest.approx(
+            num(fig[f"valor_{iid}"]) / total * 100, abs=0.02), \
+            f"peso_{iid} e valor_{iid} descrevem instantes diferentes"
+
+
+def test_cash_has_one_share_everywhere(ran):
+    """
+    The cash balance was a share of the opening patrimony in the pack and of
+    the closing patrimony in the rule that fired, so the figure sheet carried
+    18,92% and 18,18% for the same money and the gate authorised both. One
+    fact, one authorised string.
+    """
+    pack = stage_out(ran, "metrics_pack.json")
+    fig = stage_out(ran, "figures.json")
+    recs = stage_out(ran, "recommendations.json")
+
+    assert pack["cash_pct_of_total_end"] == pytest.approx(
+        pack["cash_value"] / pack["total_value_end"] * 100, abs=0.01)
+    caixa = fig["caixa_pct"]
+    assert fig["peso_CASH_BRL"] == caixa, "peso do caixa diverge de caixa_pct"
+    medido = [k for k in fig if k.startswith("pct_medido_MAX_IDLE_CASH_PCT")]
+    for k in medido:
+        assert fig[k] == caixa, f"{k} diverge de caixa_pct: {fig[k]} vs {caixa}"
+    for r in recs["recommendations"]:
+        if r["rule_id"] == "MAX_IDLE_CASH_PCT":
+            assert r["observed_pct"] == pytest.approx(pack["cash_pct_of_total_end"], abs=0.01)
+
+
 # ---------------------------------------------------------------- the profile
 def test_profile_reads_three_parameters_with_evidence(ran):
     d = pd.read_csv(ran / "data" / "reference" / "client_profile.csv").fillna("")
@@ -183,6 +244,42 @@ def test_gate_rejects_a_letter_missing_the_client_name(ran):
     r = _verify(ran, _base_letter(ran).replace("Albert, ", ""))
     assert r.returncode == 1
     assert "client_name_missing" in r.stdout
+
+
+def test_gate_rejects_an_unfilled_template_field(ran):
+    r = _verify(ran, _base_letter(ran) + " Atenciosamente, [nome do assessor].")
+    assert r.returncode == 1
+    assert "placeholder_leak" in r.stdout
+
+
+def test_gate_rejects_a_letter_naming_another_client(ran):
+    """The real hazard in a multi-client run: the previous client's name."""
+    r = _verify(ran, _base_letter(ran) + " Beatriz, obrigado pela confianca.")
+    assert r.returncode == 1
+    assert "wrong_client_name" in r.stdout
+
+
+def test_gate_does_not_block_an_ordinary_first_name(ran):
+    """
+    'joao' was on the placeholder list as a literal, so a client named Joao
+    could never be written to. Only names belonging to OTHER clients on the
+    roster are placeholders; any other name is just prose.
+    """
+    r = _verify(ran, _base_letter(ran) + " Falamos com Joao Pedro, seu contador.")
+    assert r.returncode == 0, r.stdout
+
+
+def test_letter_prompt_does_not_embed_the_raw_allocation_object(ran):
+    """
+    The prompt used to interpolate the whole allocation_target JSON - dozens of
+    unrounded floats the figure sheet never authorised - into a message telling
+    the model to quote only authorised figures. The gate caught what it copied;
+    this stops the leak at the source.
+    """
+    src = (ran / "src" / "generate_letter.py").read_text(encoding="utf-8")
+    assert "json.dumps(allocation" not in src, \
+        "o prompt voltou a despejar o allocation_target inteiro"
+    assert "alloc_block" in src
 
 
 # ---------------------------------------------------------------- benchmarks

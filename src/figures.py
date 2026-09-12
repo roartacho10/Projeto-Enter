@@ -47,7 +47,7 @@ def build() -> dict[str, str]:
         "investido_fim": money(pack.invested_value_end),
         "retorno_investido": pct(pack.invested_return_pct),
         "caixa_valor": money(pack.cash_value),
-        "caixa_pct": pct(pack.cash_pct_of_total),
+        "caixa_pct": pct(pack.cash_pct_of_total_end),
         "cdi_periodo": pct(pack.cdi_return_pct),
         "ipca_periodo": pct(pack.ipca_return_pct),
         "excesso_sobre_cdi": pp(pack.excess_over_cdi_pp),
@@ -58,7 +58,11 @@ def build() -> dict[str, str]:
     for m in pack.positions:
         f[f"retorno_{m.instrument_id}"] = pct(m.return_pct)
         f[f"valor_{m.instrument_id}"] = money(m.value_end)
-        f[f"peso_{m.instrument_id}"] = pct(m.weight_pct)
+        # The closing weight, so that valor_X and peso_X describe the same
+        # instant. The opening weight is not published: it exists for the
+        # attribution arithmetic, and a letter quoting it beside a closing
+        # value states two dates as if they were one.
+        f[f"peso_{m.instrument_id}"] = pct(m.weight_end_pct)
         f[f"contrib_{m.instrument_id}"] = pp(m.contribution_pp)
     rp = OUT / "recommendations.json"
     if rp.exists():

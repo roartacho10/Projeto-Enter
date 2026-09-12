@@ -99,7 +99,7 @@ def build_html(fit: float = 1.0, show_annex: bool = True, macro_first: bool = Fa
     pos_rows = [
         {"name": ins.loc[m.instrument_id, "display_name"],
          "value": brmoney(m.value_end),
-         "weight": brpct(m.weight_pct),
+         "weight": brpct(m.weight_end_pct),   # same instant as value_end above
          "ret": brpct(m.return_pct) if abs(m.return_pct) > 0.004 else "—"}
         for m in sorted(pack.positions, key=lambda x: -x.value_end)]
     # Rebalance plan: sells name instruments, the purchase names a family.

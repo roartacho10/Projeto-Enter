@@ -21,6 +21,7 @@ import os
 import subprocess
 import sys
 from src.allocation import MODEL_VERSION, fingerprint
+from src.context import br_date, period_bounds, period_label
 import pandas as pd
 import streamlit as st
 from streamlit.components.v1 import html as st_html
@@ -155,7 +156,9 @@ def limits(cid: str) -> dict[str, str]:
 
 
 def pct(v) -> str:
-    return f"{float(v):.1f}%".replace(".", ",")
+    """Two decimals, like figures.py. One decimal here and two in the letter
+    meant the same measure was rounded differently on screen and on paper."""
+    return f"{float(v):.2f}%".replace(".", ",")
 
 
 def pp(v) -> str:
@@ -217,7 +220,7 @@ def queue() -> pd.DataFrame:
             if pack:
                 row |= {"Patrimônio": pack["total_value_end"],
                         "Retorno": pack["total_return_pct"],
-                        "Caixa": pack["cash_pct_of_total"],
+                        "Caixa": pack["cash_pct_of_total_end"],
                         "Achados": len(rec["recommendations"]) if rec else 0}
         rows.append(row)
     df = pd.DataFrame(rows, columns=cols)
@@ -226,12 +229,21 @@ def queue() -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------- header
+# Advisor, code and reference month come from clients.csv, the same row
+# render_pdf reads. They were written into this file by hand, so changing the
+# month in the registry made the screen contradict the letter it produced.
+_crow = clients().set_index("client_id").loc[ACTIVE]
+_period = str(_crow["period"]).strip()
+_mes, _ano = period_label(_period)
+_ini, _fim = period_bounds(_period)
+
 st.markdown(f"""
 <div class="band">
   <div>
     <p class="eyebrow">XP Investimentos</p>
     <h1>Relatórios mensais</h1>
-    <p class="sub">Antonio Bicudo · Código A7699 · Período de referência: abril de 2025</p>
+    <p class="sub">{_crow["advisor"]} · Código {_crow["advisor_code"]} · Período de
+       referência: {_mes.lower()} de {_ano}</p>
   </div>
   <img src="{logo_uri()}" alt="XP">
 </div>""", unsafe_allow_html=True)
@@ -311,7 +323,8 @@ st.markdown(f'<p class="sectitle">{name}</p>', unsafe_allow_html=True)
 
 pack, rec = load(cid, "metrics_pack.json"), load(cid, "recommendations.json")
 plan, rep = load(cid, "rebalance_plan.json"), load(cid, "verification_report.json")
-if pack and not {"cdi_return_pct", "ipca_return_pct", "real_return_total_pct", "excess_over_cdi_pp"}.issubset(pack):
+if pack and not {"cdi_return_pct", "ipca_return_pct", "real_return_total_pct",
+                 "excess_over_cdi_pp", "cash_pct_of_total_end"}.issubset(pack):
     st.info("Os cálculos salvos usam um formato antigo. Use Atualizar dados para reconstruí-los.")
     pack = None
 allocation = load(cid, "allocation_target.json")
@@ -356,7 +369,9 @@ else:
 
         rows = []
         if "MAX_IDLE_CASH_PCT" in by_rule:
-            rows.append(("Caixa", f'<em>{pct(pack["cash_value"] / pack["total_value_end"] * 100)}</em> '
+            # Read, never recomputed: the screen must not be able to disagree
+            # with the MetricsPack, which is the point of this file being thin.
+            rows.append(("Caixa", f'<em>{pct(pack["cash_pct_of_total_end"])}</em> '
                                   f'· limite {pct(lim.get("MAX_IDLE_CASH_PCT", 0))}'))
         if "MAX_EQUITY_LOOKTHROUGH_PCT" in by_rule:
             rows.append(("Renda variável",
@@ -398,7 +413,7 @@ else:
             f' · <em>{pp(m["contribution_pp"])}</em> na carteira</span></div>'
             for m in movers) + "</div>", unsafe_allow_html=True)
         st.caption("Contribuição de cada posição para o resultado do patrimônio, "
-                   "de 31/03 a 30/04/2025.")
+                   f"de {br_date(_ini)} a {br_date(_fim)}.")
 
     if rec and rec["recommendations"]:
         with st.expander(f"Base de cada ponto de atenção ({len(rec['recommendations'])})"):

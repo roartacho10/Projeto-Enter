@@ -177,11 +177,12 @@ def check(text: str) -> tuple[list[tuple[str, str, str]], dict]:
     for m in pack["positions"]:
         owned[m["instrument_id"]] = {
             _br(m["return_pct"]), _br(abs(m["return_pct"])),
-            _br(m["weight_pct"]), _br(m["contribution_pp"]), _br(abs(m["contribution_pp"])),
+            _br(m["weight_end_pct"]), _br(m["weight_start_pct"]),
+            _br(m["contribution_pp"]), _br(abs(m["contribution_pp"])),
             _br(m["contribution_pp"], 3), _br(abs(m["contribution_pp"]), 3),
         }
     portfolio_figs = {_br(pack[k]) for k in (
-        "total_return_pct", "invested_return_pct", "cash_pct_of_total", "coverage_pct",
+        "total_return_pct", "invested_return_pct", "cash_pct_of_total_end", "coverage_pct",
         "cdi_return_pct", "ipca_return_pct", "excess_over_cdi_pp",
         "real_return_total_pct", "ibov_return_pct")}
     portfolio_figs |= {_br(abs(pack["excess_over_cdi_pp"]))}

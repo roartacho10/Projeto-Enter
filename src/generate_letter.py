@@ -48,7 +48,11 @@ if not os.environ.get("OPENAI_API_KEY"):
     sys.exit("OPENAI_API_KEY nao esta definida. No PowerShell:\n"
              '  setx OPENAI_API_KEY "sua-chave"\n'
              "  (feche e reabra o PowerShell depois)")
-client = OpenAI()
+# Named `oai`, not `client`: `client` is the function imported from context
+# that returns the client's registry row. Binding the OpenAI handle to that
+# name shadowed it for the rest of the module and only worked because _c was
+# taken first.
+oai = OpenAI()
 usage_log: list[dict] = []
 
 
@@ -68,7 +72,7 @@ def ask(model: str, system: str, user: str) -> str:
     }
     for _ in range(4):
         try:
-            r = client.chat.completions.create(**kwargs)
+            r = oai.chat.completions.create(**kwargs)
             break
         except Exception as e:
             msg = str(e).lower()
@@ -134,6 +138,18 @@ if plan:
                     "This is a suggestion, no trade has been executed. Pending reviews: "
                   + json.dumps(plan.get("pending_reviews", []), ensure_ascii=False))
 
+# The allocation model used to reach the prompt as the whole allocation_target
+# JSON: dozens of raw floats the figure sheet never authorised, handed to a
+# model told to quote only authorised figures. The gate caught anything it
+# copied, but the discipline is cheaper to keep than to enforce - so the model
+# now sees only the horizon, the forecast years and the assumptions in words.
+# Every number it may write is already in the alocacao_* keys above.
+alloc_block = "\n".join(
+    [f"  janela de projeção: de {allocation['start']} a {allocation['end']}",
+     "  anos projetados: " + ", ".join(str(r["year"]) for r in allocation["annual"]),
+     "  premissas:"]
+    + [f"    - {a}" for a in allocation["assumptions"]])
+
 rec_block = "\n".join(
     f"  - [{r['action']}] {r['observed']} | limite: {r['threshold']} | motivo: {r['rationale']}"
     for r in recs["recommendations"])
@@ -174,8 +190,9 @@ because the specific product is chosen with the client. Never claim that every
 suitability finding is cleared; any pending category reviews still need assessment:
 {plan_block or "(sem plano)"}
 
-CLASS ALLOCATION MODEL (use only the authorised alocacao_* figures when quoting numbers):
-{json.dumps(allocation, ensure_ascii=False)}
+CLASS ALLOCATION MODEL. The figures are already in the AUTHORISED list above
+under the alocacao_* keys; the model's own assumptions, in the firm's words:
+{alloc_block}
 Explain that this is a model target, not a mathematically optimal portfolio or a
 return promise. Compare cumulative real class estimates over the SAME forecast
 window, not annual estimates with cumulative estimates. GDP + assumed dividend

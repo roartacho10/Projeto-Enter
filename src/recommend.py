@@ -65,7 +65,7 @@ direct_pct = sum(m.value_end for m in pack.positions
 
 # --- 1. idle cash
 lim = float(rule("MAX_IDLE_CASH_PCT")["threshold"])
-cash_pct_end = pack.cash_value / pack.total_value_end * 100
+cash_pct_end = pack.cash_pct_of_total_end   # computed once, in compute_metrics
 if cash_pct_end > lim:
     monthly = pack.cash_value * pack.cdi_return_pct / 100
     add("MAX_IDLE_CASH_PCT", "allocate",

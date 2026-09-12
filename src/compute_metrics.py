@@ -108,16 +108,21 @@ for _, p in positions.iterrows():
         instrument_id=iid, quantity=qty, price_start=price0, price_end=price1,
         value_start=round(v0, 2), value_end=round(v1, 2),
         return_pct=round((v1 / v0 - 1) * 100, 4) if v0 else 0.0,
-        weight_pct=0.0, contribution_pp=0.0, pricing_note=note))
+        weight_start_pct=0.0, weight_end_pct=0.0, contribution_pp=0.0, pricing_note=note))
 
 # ---------------------------------------------------------------- aggregates
 t0 = sum(m.value_start for m in metrics)
 t1 = sum(m.value_end for m in metrics)
-cash = sum(m.value_start for m in metrics if instruments.loc[m.instrument_id, "type"] == "cash")
+cash = sum(m.value_end for m in metrics if instruments.loc[m.instrument_id, "type"] == "cash")
 i0 = sum(m.value_start for m in metrics if instruments.loc[m.instrument_id, "type"] != "cash")
 i1 = sum(m.value_end for m in metrics if instruments.loc[m.instrument_id, "type"] != "cash")
 for m in metrics:
-    m.weight_pct = round(m.value_start / t0 * 100, 4)
+    # Opening weight is the attribution base: contribution_pp divides by t0, so
+    # the contributions add up to the total return only against this weight.
+    m.weight_start_pct = round(m.value_start / t0 * 100, 4)
+    # Closing weight is what value_end reconciles with, and the only one that
+    # may be printed under a heading naming the closing date.
+    m.weight_end_pct = round(m.value_end / t1 * 100, 4)
     m.contribution_pp = round((m.value_end - m.value_start) / t0 * 100, 4)
 
 # ---------------------------------------------------------------- benchmark
@@ -153,7 +158,7 @@ pack = MetricsPack(
     total_return_pct=round((t1 / t0 - 1) * 100, 4),
     invested_value_start=round(i0, 2), invested_value_end=round(i1, 2),
     invested_return_pct=round(inv_ret, 4),
-    cash_value=round(cash, 2), cash_pct_of_total=round(cash / t0 * 100, 4),
+    cash_value=round(cash, 2), cash_pct_of_total_end=round(cash / t1 * 100, 4),
     cdi_return_pct=round(cdi_ret, 4), ipca_return_pct=round(ipca_ret, 4),
     excess_over_cdi_pp=round(inv_ret - cdi_ret, 4),
     real_return_total_pct=round(real_total, 4),
@@ -218,10 +223,12 @@ for _row, _col, _label, _got, _tol in (
     if _exp is not None:
         chk(_label, _got, _exp, _tol)
 
-print(f"{'posicao':22} {'31/03':>13} {'30/04':>13} {'peso':>7} {'retorno':>9} {'contrib':>9}")
+print(f"{'posicao':22} {'31/03':>13} {'30/04':>13} {'peso ini':>9} {'peso fim':>9} "
+      f"{'retorno':>9} {'contrib':>9}")
 for m in sorted(metrics, key=lambda x: -x.contribution_pp):
     print(f"{m.instrument_id:22} {m.value_start:13,.2f} {m.value_end:13,.2f} "
-          f"{m.weight_pct:6.2f}% {m.return_pct:8.2f}% {m.contribution_pp:+8.3f}pp")
+          f"{m.weight_start_pct:8.2f}% {m.weight_end_pct:8.2f}% "
+          f"{m.return_pct:8.2f}% {m.contribution_pp:+8.3f}pp")
 print("-" * 80)
 print(f"{'PATRIMONIO':22} {pack.total_value_start:13,.2f} {pack.total_value_end:13,.2f} "
       f"{'':7} {pack.total_return_pct:8.2f}%")
@@ -231,7 +238,7 @@ print(f"\nCDI {pack.cdi_return_pct:.2f}%   IPCA {pack.ipca_return_pct:.2f}%   "
       f"(Ibovespa {pack.ibov_return_pct:.2f}%, contexto de mercado)")
 print(f"Investido acima do CDI:        {pack.excess_over_cdi_pp:+.2f} pp")
 print(f"Retorno real do patrimonio:    {pack.real_return_total_pct:+.2f}% (deflacionado pelo IPCA)")
-print(f"Caixa: R$ {pack.cash_value:,.2f} ({pack.cash_pct_of_total:.1f}% do patrimonio)")
+print(f"Caixa: R$ {pack.cash_value:,.2f} ({pack.cash_pct_of_total_end:.1f}% do patrimonio final)")
 print(f"Cobertura de marcacao: {pack.coverage_pct:.1f}% do investido")
 print(f"\n--- validacao contra {golden_path.name}")
 for label, got, exp, ok in checks:

@@ -19,7 +19,7 @@ import sys
 from decimal import Decimal
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from context import OUT, client  # noqa: E402
+from context import OUT, client, clients  # noqa: E402
 from claims import check as check_claims  # noqa: E402
 
 _c = client()
@@ -30,11 +30,26 @@ FORBIDDEN = [                         # language a regulated letter must not use
     "garantido", "garantia de retorno", "sem risco", "risco zero",
     "lucro certo", "rentabilidade garantida", "com certeza vai",
 ]
-PLACEHOLDERS = ["prezado joão", "joão", "[", "xxx", "lorem"]
+# A placeholder is template text that survived, not a name that happens to be
+# common. The old list blocked the literal string "joão", so a client actually
+# called João could never receive a letter, and blocked "[", so any bracket in
+# the prose failed the gate. What is checked instead: an unfilled bracketed
+# slot, obvious filler, and the first name of ANY OTHER client on the roster -
+# which catches "Prezado João" generically and also catches the real risk in a
+# multi-client run, a letter addressed to the previous client.
+PLACEHOLDERS = ["xxx", "lorem ipsum", "nome do cliente", "seu nome aqui"]
+BRACKETED = re.compile(r"\[[^\]\n]{1,60}\]")
 
 # A digit glued to letters is part of a ticker (HAPV3, AZZA3), not a claim.
 NUM = re.compile(r"(?<![\w/.,])\d{1,3}(?:\.\d{3})*(?:,\d+)?(?![\w/])")
 DATEISH = re.compile(r"\d{1,2}/\d{1,2}/\d{2,4}|\b(?:19|20)\d{2}\b")
+
+
+def other_client_first_names() -> set[str]:
+    """First names on the roster that are not this client's, lowercased."""
+    mine = CLIENT_NAME.lower()
+    return {str(n).split()[0].lower() for n in clients()["name"]
+            if str(n).strip() and str(n).split()[0].lower() != mine}
 
 
 def allowed_strings() -> set[str]:
@@ -76,6 +91,14 @@ def verify(text: str) -> list[tuple[str, str, str]]:
         if p in low:
             issues.append(("blocker", "placeholder_leak",
                            f"texto de exemplo ou placeholder vazou: '{p}'"))
+    for m in BRACKETED.findall(text):
+        issues.append(("blocker", "placeholder_leak",
+                       f"campo de modelo nao preenchido: '{m}'"))
+    for other in other_client_first_names():
+        if re.search(rf"\b{re.escape(other)}\b", low):
+            issues.append(("blocker", "wrong_client_name",
+                           f"a carta menciona '{other.capitalize()}', que e outro cliente "
+                           f"do cadastro, e nao '{CLIENT_NAME}'"))
     if ADVISOR_NAME.lower() not in low:
         issues.append(("warning", "advisor_missing",
                        f"a carta nao assina como '{ADVISOR_NAME}'"))
