@@ -36,6 +36,7 @@ model in circles over a sentence that was fine.
 """
 from __future__ import annotations
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 import json
 import re
@@ -48,8 +49,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from context import OUT, REF  # noqa: E402
 
 # --- A: direction words, by the sign they assert
-UP = r"subiu|subiram|avanç\w+|valoriz\w+|ganh\w+|alta de|cresc\w+|apreci\w+|contribuiu positivamente"
-DOWN = r"caiu|caíram|cair\w*|recu\w+|desvaloriz\w+|perd\w+|queda de|baixa de|ced\w+|recuo de|contribuiu negativamente"
+UP = r"\b(?:subiu|subiram|avanç\w+|valoriz\w+|ganh\w+|alta de|cresc\w+|apreci\w+|contribuiu positivamente)\b"
+DOWN = r"\b(?:caiu|caíram|cair\w*|recu\w+|desvaloriz\w+|perd\w+|queda de|baixa de|ced\w+|recuo de|contribuiu negativamente)\b"
 
 # --- B: the letter recommends; it never reports an executed trade
 EXECUTED = [
@@ -61,9 +62,9 @@ EXECUTED = [
 
 # --- C: recommendation verbs, mapped to the plan's action vocabulary
 ACTION_WORDS = {
-    "sell": r"vend\w+", "redeem": r"resgat\w+", "buy": r"aplic\w+|compr\w+|aloc\w+",
+    "sell": r"\bvend\w+\b", "redeem": r"\bresgat\w+\b", "buy": r"\b(?:aplic\w+|compr\w+|aloc\w+)\b",
 }
-RECOMMENDING = r"recomend\w+|sugir\w+|sugest\w+|propon\w+|orient\w+|indic\w+|convém|deve"
+RECOMMENDING = r"\b(?:recomend\w+|sugir\w+|sugest\w+|propon\w+|orient\w+|indic\w+|convém|deve)\b"
 
 # --- D
 BEAT_CDI = r"super\w+ o cdi|acima do cdi|ante o cdi|melhor que o cdi|à frente do cdi"
@@ -106,6 +107,14 @@ def _entities() -> dict[str, str]:
             n = (n or "").strip()
             if len(n) >= 4 and r["instrument_id"] not in ("IBOV",):
                 out[n.lower()] = r["instrument_id"]
+    aliases = REF / "instrument_aliases.csv"
+    if aliases.exists():
+        valid_ids = set(ins["instrument_id"])
+        for row in pd.read_csv(aliases, dtype=str).fillna("").to_dict("records"):
+            alias, iid = row["alias"].strip().lower(), row["instrument_id"]
+            if iid not in valid_ids or not alias or (alias in out and out[alias] != iid):
+                raise ValueError(f"Invalid or ambiguous instrument alias: {alias}")
+            out[alias] = iid
     return out
 
 
@@ -158,10 +167,13 @@ def check(text: str) -> tuple[list[tuple[str, str, str]], dict]:
     # Every figure each position legitimately owns, as the strings the letter
     # would write. A number in one position's sentence that belongs to another
     # position and to no portfolio-level total is a misattribution.
-    def _br(v, nd=2):
-        return f"{v:.{nd}f}".replace(".", ",")
+    def canonical_number(value: str) -> Decimal:
+        return Decimal(value.replace(".", "").replace(",", "."))
 
-    owned: dict[str, set[str]] = {}
+    def _br(v, nd=2):
+        return canonical_number(f"{v:.{nd}f}".replace(".", ","))
+
+    owned: dict[str, set[Decimal]] = {}
     for m in pack["positions"]:
         owned[m["instrument_id"]] = {
             _br(m["return_pct"]), _br(abs(m["return_pct"])),
@@ -241,7 +253,7 @@ def check(text: str) -> tuple[list[tuple[str, str, str]], dict]:
     for s_ in sentences:
         low = s_.lower()
         spans = sorted((m.start(), ents[n]) for n in names
-                       for m in re.finditer(re.escape(n), low))
+                       for m in re.finditer(r"(?<!\w)" + re.escape(n) + r"(?!\w)", low))
         hits = {iid for _, iid in spans}
         if not hits:
             continue
@@ -254,7 +266,7 @@ def check(text: str) -> tuple[list[tuple[str, str, str]], dict]:
             owner = before[-1]
             if owner not in owned:
                 continue
-            bare = fm.group(1).lstrip("+-")
+            bare = canonical_number(fm.group(1).lstrip("+-"))
             if bare in owned[owner] or bare in portfolio_figs:
                 checked += 1
                 continue

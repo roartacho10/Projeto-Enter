@@ -48,8 +48,9 @@ the suggested index migration, per-basket product limits and limitations.
    monetary trades and separately reports pending category reviews.
 5. **Writes** the letter with a language model that receives a list of
    authorised figures and is told to quote them verbatim.
-6. **Verifies** in two layers. The figure gate matches every number in the text,
-   character for character, against the authorised sheet. Then the **claim gate**
+6. **Verifies** in two layers. The figure gate checks exact numeric equality
+   against the authorised sheet, accepting trailing-zero formatting differences
+   without rounding or tolerance. Then the **claim gate**
    (`src/claims.py`) confronts what the sentences ASSERT with the same data: an
    instrument said to have risen when it fell, a trade recommended for a position
    the plan does not touch, "beat the CDI" when the excess is negative,

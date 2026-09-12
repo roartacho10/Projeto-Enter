@@ -1,11 +1,10 @@
 """
 L5 - Verification gate.
 
-Runs after generation and before any human sees the letter. Every figure in
-the text must appear, character for character, in the authorised figure sheet
-produced by figures.py. Exact matching rather than numeric tolerance is what
-makes this hard to fool: a plausible-looking invented number has no chance of
-coinciding with an authorised string.
+Runs after generation. Every numeric value must exist in the authorised sheet.
+Decimal equality accepts grouping and trailing-zero formatting differences
+(25,0 and 25,00), without rounding or numerical tolerance. Attribution and
+direction are checked separately by claims.py.
 
 This is the layer the first version of the workflow did not have, and the one
 that would have caught its three invented figures and its wrong client name.
@@ -17,6 +16,7 @@ from pathlib import Path
 import json
 import re
 import sys
+from decimal import Decimal
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from context import OUT, client  # noqa: E402
@@ -47,16 +47,23 @@ def allowed_strings() -> set[str]:
     return out
 
 
+def exact_number(token: str) -> Decimal:
+    """Ignore grouping and trailing zeros, never round or use a tolerance."""
+    return Decimal(token.replace(".", "").replace(",", "."))
+
+
 def verify(text: str) -> list[tuple[str, str, str]]:
     """Returns a list of (severity, code, message)."""
     issues: list[tuple[str, str, str]] = []
     allowed = allowed_strings()
+    allowed_values = {exact_number(value) for value in allowed if re.fullmatch(
+        r"\d{1,3}(?:\.\d{3})*(?:,\d+)?", value)}
     masked = DATEISH.sub(" ", text)          # dates and years are not claims
 
     for token in NUM.findall(masked):
         if "," not in token and token.isdigit() and 1900 <= int(token) <= 2100:
             continue                          # bare year
-        if token in allowed:
+        if token in allowed or exact_number(token) in allowed_values:
             continue
         issues.append(("blocker", "ungrounded_number",
                        f"'{token}' nao esta na folha de cifras autorizadas (figures.json)"))
