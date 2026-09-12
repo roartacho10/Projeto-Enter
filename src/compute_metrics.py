@@ -24,9 +24,6 @@ from context import CLIENT_ID, OUT, REF, PROC, period_id, period_bounds, br_date
 CLIENT = CLIENT_ID
 PERIOD = period_id()
 START, END = period_bounds(PERIOD)
-# Policy benchmark for a "moderado" mandate. Declared, not implied - the v1
-# quoted a benchmark that existed in no input file.
-BENCH_NAME, W_CDI, W_IBOV = "75% CDI + 25% Ibovespa", 0.75, 0.25
 RUN_ID = datetime.now(timezone.utc).strftime("run_%Y%m%dT%H%M%SZ")
 
 issues: list[DataQualityIssue] = []
@@ -132,8 +129,23 @@ else:
     cdi_ret = ((1 + cdi["value"] / 100).prod() - 1) * 100
 ib0, ib1 = price_on("IBOV", START), price_on("IBOV", END)
 ibov_ret = (ib1 / ib0 - 1) * 100 if ib0 and ib1 else 0.0
-bench = W_CDI * cdi_ret + W_IBOV * ibov_ret
+
+# IPCA is published monthly and dated at the first of the month it refers to,
+# so the period's inflation is the row of the closing month - not a window of
+# daily observations like the CDI.
+ipca = ind[(ind["series_id"] == "433") & (ind["date"].str[:7] == END[:7])]
+if ipca.empty:
+    log("blocker", "no_ipca", f"IPCA (serie 433) ausente para {END[:7]}")
+    ipca_ret = 0.0
+else:
+    ipca_ret = float(ipca["value"].iloc[-1])
+
 inv_ret = (i1 / i0 - 1) * 100
+tot_ret = (t1 / t0 - 1) * 100
+# Real return is a deflation, not a subtraction. Over one month the difference
+# is small, but writing r - i as "retorno real" is wrong arithmetic and the
+# kind of thing a reader with a markets background checks first.
+real_total = ((1 + tot_ret / 100) / (1 + ipca_ret / 100) - 1) * 100
 
 pack = MetricsPack(
     run_id=RUN_ID, client_id=CLIENT, period_start=START, period_end=END, positions=metrics,
@@ -142,9 +154,10 @@ pack = MetricsPack(
     invested_value_start=round(i0, 2), invested_value_end=round(i1, 2),
     invested_return_pct=round(inv_ret, 4),
     cash_value=round(cash, 2), cash_pct_of_total=round(cash / t0 * 100, 4),
-    benchmark_name=BENCH_NAME, benchmark_return_pct=round(bench, 4),
-    excess_return_pp=round(inv_ret - bench, 4),
-    cdi_return_pct=round(cdi_ret, 4), ibov_return_pct=round(ibov_ret, 4),
+    cdi_return_pct=round(cdi_ret, 4), ipca_return_pct=round(ipca_ret, 4),
+    excess_over_cdi_pp=round(inv_ret - cdi_ret, 4),
+    real_return_total_pct=round(real_total, 4),
+    ibov_return_pct=round(ibov_ret, 4),
     coverage_pct=round(marked_value / i0 * 100, 2), issues=issues)
 
 (OUT / "metrics_pack.json").write_text(pack.model_dump_json(indent=2), encoding="utf-8")
@@ -195,6 +208,11 @@ for _row, _col, _label, _got, _tol in (
         ("__TOTAL_INVESTIDO__", "return_pct", "INVESTIDO retorno",
          pack.invested_return_pct, 0.02),
         ("__CDI__", "return_pct", "CDI do periodo", pack.cdi_return_pct, 0.02),
+        ("__IPCA__", "return_pct", "IPCA do periodo", pack.ipca_return_pct, 0.005),
+        ("__EXCESSO_SOBRE_CDI__", "return_pct", "investido acima do CDI",
+         pack.excess_over_cdi_pp, 0.02),
+        ("__RETORNO_REAL_PATRIMONIO__", "return_pct", "retorno real (deflacionado)",
+         pack.real_return_total_pct, 0.02),
         ("__IBOV__", "return_pct", "IBOV do periodo", pack.ibov_return_pct, 0.02)):
     _exp = gold(_row, _col)
     if _exp is not None:
@@ -209,9 +227,10 @@ print(f"{'PATRIMONIO':22} {pack.total_value_start:13,.2f} {pack.total_value_end:
       f"{'':7} {pack.total_return_pct:8.2f}%")
 print(f"{'  investido':22} {pack.invested_value_start:13,.2f} {pack.invested_value_end:13,.2f} "
       f"{'':7} {pack.invested_return_pct:8.2f}%")
-print(f"\nCDI {pack.cdi_return_pct:.2f}%   Ibovespa {pack.ibov_return_pct:.2f}%   "
-      f"Benchmark ({pack.benchmark_name}) {pack.benchmark_return_pct:.2f}%")
-print(f"Excesso sobre o benchmark: {pack.excess_return_pp:+.2f} pp")
+print(f"\nCDI {pack.cdi_return_pct:.2f}%   IPCA {pack.ipca_return_pct:.2f}%   "
+      f"(Ibovespa {pack.ibov_return_pct:.2f}%, contexto de mercado)")
+print(f"Investido acima do CDI:        {pack.excess_over_cdi_pp:+.2f} pp")
+print(f"Retorno real do patrimonio:    {pack.real_return_total_pct:+.2f}% (deflacionado pelo IPCA)")
 print(f"Caixa: R$ {pack.cash_value:,.2f} ({pack.cash_pct_of_total:.1f}% do patrimonio)")
 print(f"Cobertura de marcacao: {pack.coverage_pct:.1f}% do investido")
 print(f"\n--- validacao contra {golden_path.name}")

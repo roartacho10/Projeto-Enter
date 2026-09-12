@@ -121,11 +121,16 @@ class MetricsPack(BaseModel):
     invested_return_pct: float
     cash_value: float
     cash_pct_of_total: float
-    benchmark_name: str
-    benchmark_return_pct: float
-    excess_return_pp: float
+    # Two declared references, never blended. A weighted mix of CDI and
+    # Ibovespa was invented here and no document supported it; worse, it
+    # averaged a cash rate with an equity index into one figure that describes
+    # neither. CDI answers "was the risk worth taking"; IPCA answers "did the
+    # money keep its purchasing power", which is this client's stated objective.
     cdi_return_pct: float
-    ibov_return_pct: float
+    ipca_return_pct: float
+    excess_over_cdi_pp: float          # invested return minus CDI, same basis
+    real_return_total_pct: float       # patrimonio deflated by IPCA, geometric
+    ibov_return_pct: float             # market context, not a benchmark here
     coverage_pct: float
     issues: list[DataQualityIssue] = Field(default_factory=list)
 

@@ -12,3 +12,4 @@ streamlit==1.63.0
 
 # Na terça, rode `pip freeze > requirements-lock.txt` na sua máquina:
 # o que vale para a entrega é o ambiente que VOCÊ testou.
+pytest==8.3.4

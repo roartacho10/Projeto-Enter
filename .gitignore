@@ -12,6 +12,7 @@ output/
 data/processed/
 __pycache__/
 *.pyc
+.pytest_cache/
 
 # Never commit credentials
 .env

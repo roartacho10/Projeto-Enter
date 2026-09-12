@@ -60,14 +60,16 @@ def build_html(fit: float = 1.0, show_annex: bool = True) -> str:
          "b": brmoney(pack.invested_value_end), "d": brpct(pack.invested_return_pct)},
         {"label": "Saldo disponível (não remunerado)", "a": brmoney(pack.cash_value),
          "b": brmoney(pack.cash_value), "d": "—"},
-        {"label": f"Parâmetro de referência ({pack.benchmark_name})", "a": "", "b": "",
-         "d": brpct(pack.benchmark_return_pct)},
-        {"label": "Resultado ante o parâmetro", "a": "", "b": "",
-         "d": f"{pack.excess_return_pp:+.2f}".replace(".", ",") + " p.p.", "total": True},
+        {"label": "CDI no período", "a": "", "b": "", "d": brpct(pack.cdi_return_pct)},
+        {"label": "IPCA no período", "a": "", "b": "", "d": brpct(pack.ipca_return_pct)},
+        {"label": "Recursos investidos acima do CDI", "a": "", "b": "",
+         "d": f"{pack.excess_over_cdi_pp:+.2f}".replace(".", ",") + " p.p.", "total": True},
     ]
     doc = {
-        "kpi_note": f"No período: CDI {brpct(pack.cdi_return_pct)} · "
-                    f"Ibovespa {brpct(pack.ibov_return_pct)}.",
+        "kpi_note": (f"Retorno real do patrimônio, descontada a inflação do período: "
+                     f"{brpct(pack.real_return_total_pct)}. "
+                     f"Ibovespa no período: {brpct(pack.ibov_return_pct)}, como "
+                     f"referência de mercado."),
         "kicker": "Relatório Mensal", "brand": "XP Investimentos",
         "period_label": _label, "year": _year,
         "title": "Relatório mensal de investimentos",

@@ -183,7 +183,12 @@ headings, no bullets, no markdown, no figures beyond the authorised ones.
                  miss; each may contain authorised figures],
   "greeting":   "one short paragraph: purpose of the letter, addressed to the client by first name",
   "performance":"one paragraph: the month's result, what drove it, the positions
-                 that contributed most. Be explicit that the outperformance came
+                 that contributed most. Compare against the CDI and against the
+                 IPCA SEPARATELY - never as one blended figure. The CDI answers
+                 whether the risk paid; the IPCA answers whether the money kept
+                 its purchasing power. The Ibovespa may be mentioned as market
+                 context, never as the portfolio's reference. Be explicit that
+                 the outperformance came
                  from equity exposure in a strong month for the stock market and
                  not from manager skill",
   "macro":      "one paragraph: the backdrop and what it means for positioning

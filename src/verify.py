@@ -20,6 +20,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from context import OUT, client  # noqa: E402
+from claims import check as check_claims  # noqa: E402
 
 _c = client()
 CLIENT_NAME = _c["name"].split()[0]
@@ -81,6 +82,14 @@ def verify(text: str) -> list[tuple[str, str, str]]:
     if not re.search(r"cobertura|marcad", low):
         issues.append(("warning", "coverage_not_declared",
                        "a carta nao declara a cobertura de marcacao a mercado"))
+
+    # Numbers are not claims. The figure gate above proves every digit was
+    # computed; this confronts what the sentences ASSERT with the same data.
+    claim_issues, cov = check_claims(text)
+    issues.extend(claim_issues)
+    issues.append(("info", "claims_coverage",
+                   f"{cov['checked']} afirmacao(oes) conferida(s) em {cov['sentences']} "
+                   f"frases; {cov['skipped']} ignorada(s) por ambiguidade"))
     return issues
 
 

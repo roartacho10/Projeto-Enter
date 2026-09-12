@@ -10,4 +10,6 @@ __TOTAL_PATRIMONIO__,,,,,394635.6,410704.08,4.07,4.07
 __TOTAL_INVESTIDO__,,,,,319962.98,336031.46,5.02,
 __CDI__,benchmark,,,,,,1.06,
 __IBOV__,benchmark,,,,,,3.69,
-__BENCH_75CDI_25IBOV__,benchmark,,,,,,1.71,
+__IPCA__,benchmark,,,,,,0.43,
+__EXCESSO_SOBRE_CDI__,derivado,,,,,,3.96,
+__RETORNO_REAL_PATRIMONIO__,derivado,,,,,,3.6244,

@@ -318,9 +318,16 @@ else:
     k[0].metric("Patrimônio", brl(pack["total_value_end"]),
                 f"{pack['total_return_pct']:.2f}%".replace(".", ","))
     k[1].metric("Recursos investidos", f"{pack['invested_return_pct']:.2f}%".replace(".", ","))
-    k[2].metric("Ante o parâmetro", f"{pack['benchmark_return_pct']:.2f}%".replace(".", ","),
-                f"{pack['excess_return_pp']:+.2f}".replace(".", ",") + " p.p.")
-    k[3].metric("Cobertura de marcação", f"{pack['coverage_pct']:.2f}%".replace(".", ","))
+    # CDI and IPCA side by side, never blended: one says whether the risk paid,
+    # the other whether the money held its purchasing power.
+    k[2].metric("CDI no período", f"{pack['cdi_return_pct']:.2f}%".replace(".", ","),
+                f"{pack['excess_over_cdi_pp']:+.2f}".replace(".", ",") + " p.p. no investido")
+    k[3].metric("IPCA no período", f"{pack['ipca_return_pct']:.2f}%".replace(".", ","),
+                f"{pack['real_return_total_pct']:+.2f}%".replace(".", ",") + " real")
+    k2 = st.columns(4)
+    k2[0].metric("Cobertura de marcação", f"{pack['coverage_pct']:.2f}%".replace(".", ","))
+    k2[1].metric("Ibovespa no período", f"{pack['ibov_return_pct']:.2f}%".replace(".", ","),
+                 help="Referência de mercado, não parâmetro da carteira.")
 
     # Eight findings as eight stacked blocks pushed everything else below the
     # fold. The advisor needs the state of the portfolio and what moved since

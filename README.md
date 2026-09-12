@@ -25,17 +25,35 @@ The design rule the whole thing is built around:
    report's own narrative restates are checked against it, and the **table is
    the authority**. Where the two disagree the divergence is recorded and the
    table's value is what the letter is allowed to quote.
-2. **Computes** the month's return, per-position attribution, look-through
-   equity exposure and a declared benchmark — all in code, validated against a
-   hand-checked answer key.
+2. **Computes** the month's return, per-position attribution and look-through
+   equity exposure — all in code, validated against a hand-checked answer key.
+   Performance is stated against **two declared references, never blended**: the
+   CDI, which answers whether the risk paid, and the IPCA, which answers whether
+   the money kept its purchasing power. An earlier version quoted a weighted
+   "75% CDI + 25% Ibovespa" that no input file declared and that averaged a cash
+   rate with an equity index into a figure describing neither. Real return is a
+   deflation, `(1+r)/(1+i)-1`, not a subtraction. The Ibovespa is reported as
+   market context only.
 3. **Applies** suitability rules read from CSV, not hard-coded, each carrying
    the clause of the client's risk-profile document it comes from.
 4. **Sizes** the minimum set of trades that clears every breach, then re-runs
    the rules on the post-trade portfolio to prove the plan works.
 5. **Writes** the letter with a language model that receives a list of
    authorised figures and is told to quote them verbatim.
-6. **Verifies** every number, the client's name, forbidden language and length.
-   Failures are fed back and the model tries again.
+6. **Verifies** in two layers. The figure gate matches every number in the text,
+   character for character, against the authorised sheet. Then the **claim gate**
+   (`src/claims.py`) confronts what the sentences ASSERT with the same data: an
+   instrument said to have risen when it fell, a trade recommended for a position
+   the plan does not touch, "beat the CDI" when the excess is negative,
+   compliance claimed while breaches are open, past-tense execution language in
+   a letter that only recommends - and, the deepest of the six, a figure attached
+   to the **wrong position**. "LREN3, com retorno de 18,94%" quotes an authorised
+   number and misattributes it; only the claim gate sees that. Each figure is
+   attributed to the nearest position named before it, so an enumeration of three
+   holdings reads correctly while a swap inside it does not. The gate checks a
+   declared catalogue of claim shapes, not arbitrary prose, and **reports its own
+   coverage** rather than implying completeness. Failures of either layer are fed
+   back and the model tries again.
 7. **Renders** a fixed two-page PDF from a deterministic template, refusing to
    publish if the content does not fit the declared layout budget.
 
@@ -69,6 +87,38 @@ Or the advisor interface:
 ```bash
 streamlit run app.py
 ```
+
+### Tests
+
+```bash
+python -m pytest -q          # 36 tests, ~8 s, no network and no model calls
+```
+
+The suite copies out **only the files git publishes** and runs the
+deterministic stages there, so a green run also proves the repository is
+self-sufficient: the portability check and the test suite are the same act. If
+`test_ran_in_offline_mode` ever fails, a fresh clone stopped being runnable.
+
+What it holds to:
+
+- period arithmetic across year boundaries and leap Februaries
+- integrity of the curated reference data - no orphan position, no unused risk
+  category, no undeclared `quantity_basis`, a complete and monotone limits matrix
+- the metrics against the hand-checked answer key, and that per-position
+  contributions add up to the total return
+- the profile reading the three parameters *with the sentence that produced each*,
+  and that no numeric limit claims the profile document as its source
+- the rebalance clearing every violation, with no order below the minimum ticket
+  and no purchase naming a specific product
+- the verification gate: it passes a letter of authorised figures, rejects an
+  invented one, does not mistake a ticker's digit for a claim, and catches
+  forbidden language and a missing client name
+
+The suite was mutation-tested: five deliberate defects were introduced and each
+was caught. The fifth exposed a self-referential test - it read the minimum
+ticket from the policy it was checking, so zeroing the policy made it pass
+trivially. `test_min_ticket_is_meaningful` now guards that threshold's own
+sanity.
 
 ### Twenty-four months of history
 
@@ -104,6 +154,7 @@ carried at the statement's value. Quantities are held constant across the window
 
 ```
 src/            pipeline stages, each runnable on its own
+tests/          pytest suite; runs in a clean checkout of the tracked files
 templates/      the letter template (HTML + print CSS)
 data/reference/ human-curated inputs: instruments, positions, policies, answer keys
 data/raw/       downloads, immutable, with a provenance manifest

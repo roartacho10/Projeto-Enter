@@ -48,10 +48,11 @@ def build() -> dict[str, str]:
         "retorno_investido": pct(pack.invested_return_pct),
         "caixa_valor": money(pack.cash_value),
         "caixa_pct": pct(pack.cash_pct_of_total),
-        "benchmark_retorno": pct(pack.benchmark_return_pct),
-        "excesso_sobre_benchmark": pp(pack.excess_return_pp),
-        "cdi_mes": pct(pack.cdi_return_pct),
-        "ibovespa_mes": pct(pack.ibov_return_pct),
+        "cdi_periodo": pct(pack.cdi_return_pct),
+        "ipca_periodo": pct(pack.ipca_return_pct),
+        "excesso_sobre_cdi": pp(pack.excess_over_cdi_pp),
+        "retorno_real_patrimonio": pct(pack.real_return_total_pct),
+        "ibovespa_periodo": pct(pack.ibov_return_pct),
         "cobertura_marcacao": pct(pack.coverage_pct),
     }
     for m in pack.positions:
