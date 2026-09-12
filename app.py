@@ -94,6 +94,27 @@ st.markdown("""
   .state .r .k {color:#5A5A5A;}
   .state .r .v {white-space:nowrap; color:#5A5A5A;}
   .state .r .v em {font-style:normal; font-weight:700; color:#1A1A1A;}
+  /* One table for the month: two dated columns, the variation between them,
+     and what each line contributed to the portfolio's result. */
+  .mtable {width:100%; border-collapse:collapse; font-size:.86rem; margin:1rem 0 .3rem;}
+  .mtable th {text-align:right; font-weight:600; color:#7A7A7A; font-size:.72rem;
+              text-transform:uppercase; letter-spacing:.05em; white-space:nowrap;
+              border-bottom:1px solid #E4E4E2; padding:.3rem .55rem .35rem;}
+  .mtable th:first-child {text-align:left;}
+  .mtable td {text-align:right; padding:.3rem .55rem; white-space:nowrap;
+              border-bottom:1px solid #F1F1EF; color:#1A1A1A;}
+  .mtable td:first-child {text-align:left; color:#5A5A5A; white-space:normal;}
+  .mtable td.na {color:#C9C9C7;}
+  .mtable .sub {font-size:.72rem; color:#8A8A88; font-weight:400; margin-top:.05rem;}
+  .mtable tr.tot td {font-weight:700; background:#FAFAF9;}
+  .mtable tr.tot td:first-child {color:#1A1A1A;}
+  .mtable tr.grp td {border-bottom:none; padding:.8rem .55rem .15rem; color:#7A7A7A;
+                     font-size:.72rem; text-transform:uppercase; letter-spacing:.06em;}
+  /* Direction is carried by the arrow and the sign as well as by the colour,
+     so the table still reads without colour vision. */
+  .up {color:#1E6B3A; font-weight:600;}
+  .dn {color:#8C2F1E; font-weight:600;}
+  .fl {color:#9A9A98;}
   .chart {margin:.5rem 0 .3rem;}
   .chart svg {width:100%; height:auto; max-width:900px;}
   div[data-testid="stMetricValue"] {font-size:1.35rem;}
@@ -164,6 +185,23 @@ def pp(v) -> str:
     return f"{float(v):+.2f}".replace(".", ",") + " p.p."
 
 
+def trend(v) -> str:
+    """A variation as arrow, sign and colour. Never computed here - every value
+    passed in already exists on the MetricsPack."""
+    n = f"{float(v):+.2f}".replace(".", ",") + "%"
+    if abs(float(v)) < 0.005:
+        return f'<span class="fl">– {n[1:]}</span>'
+    cls, arrow = ("up", "▲") if float(v) > 0 else ("dn", "▼")
+    return f'<span class="{cls}">{arrow} {n}</span>'
+
+
+def contrib(v) -> str:
+    """Contribution in percentage points, same colour language."""
+    if abs(float(v)) < 0.005:
+        return '<span class="fl">–</span>'
+    return f'<span class="{"up" if float(v) > 0 else "dn"}">{pp(v)}</span>'
+
+
 def load(cid: str, name: str):
     p = OUT / cid / name
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
@@ -178,12 +216,21 @@ PACK_FIELDS = {"total_value_end", "total_return_pct", "cash_pct_of_total_end",
                "invested_return_pct", "cdi_return_pct", "ipca_return_pct",
                "excess_over_cdi_pp", "real_return_total_pct",
                "coverage_pct", "ibov_return_pct", "positions"}
+# The table reads the positions too, so a field added to PositionMetric has to
+# be declared here as well or a pack from an older build gets past the check
+# and dies one line later.
+POSITION_FIELDS = {"instrument_id", "value_start", "value_end", "return_pct",
+                   "contribution_pp"}
 
 
 def current_pack(cid: str):
     """The saved MetricsPack when this build can read it, otherwise None."""
     pack = load(cid, "metrics_pack.json")
-    return pack if pack and PACK_FIELDS.issubset(pack) else None
+    if not pack or not PACK_FIELDS.issubset(pack):
+        return None
+    if any(not POSITION_FIELDS.issubset(m) for m in pack["positions"]):
+        return None
+    return pack
 
 
 def run(stages, client=None, key=None, model=None) -> tuple[str | None, str]:
@@ -383,20 +430,86 @@ if not current_plan:
 if not pack:
     st.info("Cliente ainda não processado. Use **Atualizar** acima.")
 else:
-    k = st.columns(4)
-    k[0].metric("Patrimônio", brl(pack["total_value_end"]),
-                f"{pack['total_return_pct']:.2f}%".replace(".", ","))
-    k[1].metric("Recursos investidos", f"{pack['invested_return_pct']:.2f}%".replace(".", ","))
-    # CDI and IPCA side by side, never blended: one says whether the risk paid,
-    # the other whether the money held its purchasing power.
-    k[2].metric("CDI no período", f"{pack['cdi_return_pct']:.2f}%".replace(".", ","),
-                f"{pack['excess_over_cdi_pp']:+.2f}".replace(".", ",") + " p.p. no investido")
-    k[3].metric("IPCA no período", f"{pack['ipca_return_pct']:.2f}%".replace(".", ","),
-                f"{pack['real_return_total_pct']:+.2f}%".replace(".", ",") + " real")
-    k2 = st.columns(4)
-    k2[0].metric("Cobertura de marcação", f"{pack['coverage_pct']:.2f}%".replace(".", ","))
-    k2[1].metric("Ibovespa no período", f"{pack['ibov_return_pct']:.2f}%".replace(".", ","),
-                 help="Referência de mercado, não parâmetro da carteira.")
+    # ---- the whole month in one table
+    # Totals first, then every position, on the two dates the period is
+    # defined by. Nothing here is calculated: each variation is the return the
+    # MetricsPack already carries for that line, so a row cannot disagree with
+    # the letter.
+    names = instruments()["display_name"].to_dict()
+
+    def linha(rotulo, v0, v1, var, ct=None, classe=""):
+        c = contrib(ct) if ct is not None else '<span class="fl">–</span>'
+        return (f'<tr class="{classe}"><td>{rotulo}</td><td>{brl(v0)}</td>'
+                f'<td>{brl(v1)}</td><td>{trend(var)}</td><td>{c}</td></tr>')
+
+    def linha_ref(rotulo, var):
+        """
+        A reference is a return over the period, not a balance held on either
+        date, so those two cells stay empty instead of being filled with a
+        level no source declares. Only the variation column is comparable -
+        which is the whole reason for putting these rows in the same table.
+        """
+        return (f'<tr><td>{rotulo}</td><td class="na">—</td><td class="na">—</td>'
+                f'<td>{trend(var)}</td><td><span class="fl">–</span></td></tr>')
+
+    corpo = linha("Patrimônio", pack["total_value_start"], pack["total_value_end"],
+                  pack["total_return_pct"], classe="tot")
+    corpo += linha("Recursos investidos", pack["invested_value_start"],
+                   pack["invested_value_end"], pack["invested_return_pct"])
+    # Grouped by what the instrument IS, from the security master - not by a
+    # list kept here, which would drift the first time a holding is added.
+    tipos = instruments()["type"].to_dict()
+    GRUPOS = [("Ações", {"stock", "index"}),
+              ("Fundos", {"fund"}),
+              ("CDBs e caixa", {"fixed_income", "cash"})]
+    posicoes = sorted(pack["positions"], key=lambda x: -x["value_end"])
+    vistas = set()
+    for titulo, tipos_do_grupo in GRUPOS:
+        doo = [m for m in posicoes if tipos.get(m["instrument_id"]) in tipos_do_grupo]
+        if not doo:
+            continue
+        vistas.update(m["instrument_id"] for m in doo)
+        corpo += f'<tr class="grp"><td colspan="5">{titulo}</td></tr>'
+        for m in doo:
+            corpo += linha(names.get(m["instrument_id"], m["instrument_id"]),
+                           m["value_start"], m["value_end"], m["return_pct"],
+                           m["contribution_pp"])
+    # A holding whose type matches no group is shown, not dropped: a position
+    # missing from the table would be a silent omission from the client's book.
+    restantes = [m for m in posicoes if m["instrument_id"] not in vistas]
+    if restantes:
+        corpo += '<tr class="grp"><td colspan="5">Outros</td></tr>'
+        for m in restantes:
+            corpo += linha(names.get(m["instrument_id"], m["instrument_id"]),
+                           m["value_start"], m["value_end"], m["return_pct"],
+                           m["contribution_pp"])
+    corpo += '<tr class="grp"><td colspan="5">Referências do mês</td></tr>'
+    corpo += linha_ref("CDI", pack["cdi_return_pct"])
+    corpo += linha_ref("IPCA", pack["ipca_return_pct"])
+
+    st.markdown(
+        '<table class="mtable"><thead><tr><th>Métrica</th>'
+        f'<th>{br_date(_ini)}</th><th>{br_date(_fim)}</th>'
+        '<th>Variação</th><th>Contribuição</th></tr></thead>'
+        f'<tbody>{corpo}</tbody></table>', unsafe_allow_html=True)
+    st.caption(f"Variação de cada linha entre {br_date(_ini)} e {br_date(_fim)}. "
+               "Contribuição é o efeito da posição sobre o resultado do patrimônio, "
+               f"medida sobre o patrimônio de {br_date(_ini)} — por isso as "
+               "contribuições somam o retorno do patrimônio. CDI e IPCA são retornos "
+               "do mês, comparáveis à coluna de variação, e não saldos em carteira.")
+
+    st.markdown("**Leituras do período**")
+    # Two declared references, never blended: the CDI answers whether the risk
+    # paid, the IPCA whether the money kept its purchasing power.
+    st.markdown('<div class="state">' + "".join(
+        f'<div class="r"><span class="k">{k}</span><span class="v">{v}</span></div>'
+        for k, v in [
+            ("Investido acima do CDI", contrib(pack["excess_over_cdi_pp"])),
+            ("Patrimônio deflacionado pelo IPCA", trend(pack["real_return_total_pct"])),
+            ("Ibovespa", f'<em>{pct(pack["ibov_return_pct"])}</em> · contexto de mercado, '
+                         'não parâmetro desta carteira'),
+            ("Cobertura de marcação", f'<em>{pct(pack["coverage_pct"])}</em> do investido'),
+        ]) + "</div>", unsafe_allow_html=True)
 
     # Eight findings as eight stacked blocks pushed everything else below the
     # fold. The advisor needs the state of the portfolio and what moved since
@@ -444,20 +557,6 @@ else:
     elif rec:
         st.success("Carteira aderente ao mandato. Nenhum ajuste necessário.")
 
-    # ---- what actually changed since last month
-    names = instruments()["display_name"].to_dict()
-    movers = sorted(pack["positions"], key=lambda m: -abs(m["contribution_pp"]))
-    movers = [m for m in movers if abs(m["contribution_pp"]) >= 0.01][:5]
-    if movers:
-        st.markdown("**Principais mudanças no mês**")
-        st.markdown('<div class="state one">' + "".join(
-            f'<div class="r"><span class="k">{names.get(m["instrument_id"], m["instrument_id"])}'
-            f'</span><span class="v">'
-            f'{("+" if m["return_pct"] >= 0 else "")}{pct(m["return_pct"])} no ativo'
-            f' · <em>{pp(m["contribution_pp"])}</em> na carteira</span></div>'
-            for m in movers) + "</div>", unsafe_allow_html=True)
-        st.caption("Contribuição de cada posição para o resultado do patrimônio, "
-                   f"de {br_date(_ini)} a {br_date(_fim)}.")
 
     if rec and rec["recommendations"]:
         with st.expander(f"Base de cada ponto de atenção ({len(rec['recommendations'])})"):

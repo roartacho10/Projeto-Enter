@@ -152,6 +152,98 @@ def test_streamlit_opens_on_the_entry_screen(ran):
         "o nome do assessor nao veio preenchido"
 
 
+def test_a_position_from_an_older_build_asks_for_a_refresh(ran):
+    """
+    The pack-level guard is not enough now that the table reads the positions:
+    a pack saved before a position field existed passes every top-level
+    check and then dies inside the table. Same failure as the deploy that
+    broke, one level down.
+    """
+    from conftest import CLIENT
+    path = ran / "output" / CLIENT / "metrics_pack.json"
+    original = path.read_bytes()
+    try:
+        old = json.loads(original)
+        del old["positions"][0]["contribution_pp"]
+        path.write_text(json.dumps(old), encoding="utf-8")
+        app = _desk(ran)
+        assert not app.exception, [e.message for e in app.exception]
+        assert any("formato antigo" in i.value for i in app.info)
+    finally:
+        path.write_bytes(original)
+
+
+def test_table_groups_every_position_and_loses_none(ran):
+    """
+    Grouping is a presentation choice; dropping a holding is not. Whatever the
+    security master says an instrument is, it has to appear exactly once.
+    """
+    import re
+    app = _desk(ran)
+    html = "".join(m.value for m in app.markdown if "mtable" in str(m.value))
+    for titulo in ("Ações", "Fundos", "CDBs e caixa"):
+        assert f">{titulo}</td>" in html, f"seção {titulo} ausente"
+    pack = stage_out(ran, "metrics_pack.json")
+    ins = pd.read_csv(ran / "data" / "reference" / "instruments.csv",
+                      dtype=str).fillna("").set_index("instrument_id")
+    for m in pack["positions"]:
+        nome = ins.loc[m["instrument_id"], "display_name"]
+        assert len(re.findall(rf"<td>{re.escape(nome)}</td>", html)) == 1, \
+            f"{nome} aparece zero ou mais de uma vez na tabela"
+
+
+
+
+
+def test_month_table_shows_every_position_with_the_packs_own_numbers(ran):
+    """
+    The table replaced the KPI tiles and the movers list, so it is now the
+    only place the month is shown. Every position must be there, and every
+    variation must be the return the pack computed - the screen may format a
+    number but never produce one.
+    """
+    app = _desk(ran)
+    assert not app.exception, [e.message for e in app.exception]
+    html = "".join(m.value for m in app.markdown if "mtable" in str(m.value))
+    assert html, "a tabela do mes nao foi renderizada"
+    pack = stage_out(ran, "metrics_pack.json")
+    for m in pack["positions"]:
+        esperado = f"{m['return_pct']:+.2f}".replace(".", ",") + "%"
+        if abs(m["return_pct"]) >= 0.005:
+            assert esperado in html, f"{m['instrument_id']}: {esperado} ausente da tabela"
+    for total, valor in (("total_value_start", pack["total_value_start"]),
+                         ("total_value_end", pack["total_value_end"])):
+        formatado = f"{valor:,.2f}".replace(",", "\x00").replace(".", ",").replace("\x00", ".")
+        assert formatado in html, f"{total} ausente da tabela"
+    # Direction is never carried by colour alone.
+    assert "▲" in html or "▼" in html
+
+
+def test_references_show_only_a_variation_never_a_balance(ran):
+    """
+    CDI and IPCA sit in the table so their monthly variation can be read
+    against the positions' - that is the point of them being there. But they
+    are returns over the period, not balances held on either date, so the two
+    dated cells must stay empty. A number in them would be invented.
+    """
+    import re
+    app = _desk(ran)
+    html = "".join(m.value for m in app.markdown if "mtable" in str(m.value))
+    pack = stage_out(ran, "metrics_pack.json")
+    for rotulo, valor in (("CDI", pack["cdi_return_pct"]), ("IPCA", pack["ipca_return_pct"])):
+        linha = re.search(rf"<tr><td>{rotulo}</td>(.*?)</tr>", html)
+        assert linha, f"linha de {rotulo} ausente da tabela"
+        celulas = re.findall(r"<td[^>]*>(.*?)</td>", linha.group(1))
+        assert celulas[0] == celulas[1] == '<span class="na">—</span>'.replace(
+            '<span class="na">', "").replace("</span>", ""), \
+            f"{rotulo} recebeu um saldo numa das colunas de data: {celulas[:2]}"
+        assert f"{valor:+.2f}".replace(".", ",") + "%" in celulas[2], \
+            f"a variacao de {rotulo} nao veio do pack"
+    # The Ibovespa is market context, not a reference for this mandate, and
+    # stays out of the table on purpose.
+    assert "Ibovespa" not in html
+
+
 def test_streamlit_displays_the_new_targets_and_hides_old_reports(ran):
     app = _desk(ran)
     assert not app.exception, [e.message for e in app.exception]

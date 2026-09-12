@@ -108,6 +108,12 @@ class PositionMetric(BaseModel):
     weight_start_pct: float
     weight_end_pct: float
     contribution_pp: float
+    # No per-position comparison against the CDI or the IPCA lives here. It
+    # was tried both ways and neither reads well across a mixed book: in
+    # points it is fine for a fund and meaningless next to a stock, and as a
+    # share of the reference a stock comes out at 2.837% of the CDI, which is
+    # arithmetically true and tells the reader nothing. The comparison against
+    # the references stays at the portfolio level, where it has a basis.
     pricing_note: str = ""
 
 
