@@ -141,14 +141,37 @@ def test_streamlit_displays_the_new_targets_and_hides_old_reports(ran):
     assert not button.disabled
 
 
-def test_streamlit_can_open_legacy_results_and_request_refresh(ran):
+def _pack_fields() -> list[str]:
+    """
+    The pack fields app.py declares it reads, parsed from the source so that a
+    field added tomorrow is covered by this test the day it is added.
+    """
+    import ast
+    from conftest import ROOT
+    tree = ast.parse((ROOT / "app.py").read_text(encoding="utf-8"))
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(
+                getattr(t, "id", "") == "PACK_FIELDS" for t in node.targets):
+            return sorted(ast.literal_eval(node.value))
+    raise AssertionError("PACK_FIELDS nao encontrado em app.py")
+
+
+@pytest.mark.parametrize("missing", _pack_fields())
+def test_streamlit_can_open_legacy_results_and_request_refresh(ran, missing):
+    """
+    Every field, not one of them. The earlier version dropped a single key the
+    client queue never touches, so it passed while the queue - which runs
+    first and reads the pack too - crashed on a pack saved by an older build.
+    A deployed container keeps output/ across a code update, so this is the
+    normal state after every release, not an edge case.
+    """
     from streamlit.testing.v1 import AppTest
     from conftest import CLIENT
     path = ran / "output" / CLIENT / "metrics_pack.json"
     original = path.read_bytes()
     try:
         old = json.loads(original)
-        del old["ipca_return_pct"]
+        del old[missing]
         path.write_text(json.dumps(old), encoding="utf-8")
         app = AppTest.from_file(str(ran / "app.py")).run(timeout=45)
         assert not app.exception, [e.message for e in app.exception]
