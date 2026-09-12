@@ -1,0 +1,13 @@
+id,type,quantity,price_start,price_end,value_start,value_end,return_pct,contribution_pp
+LREN3,stock,1642.0,12.23,14.61,20081.66,23989.62,19.46,0.99
+MRFG3,stock,1504.0,18.06,21.48,27162.24,32305.92,18.94,1.303
+AZZA3,stock,193.0,24.5,31.84,4728.5,6145.12,29.96,0.359
+HAPV3,stock,1547.0,2.21,2.32,3418.87,3589.04,4.98,0.043
+FUNDS_BUCKET,fund,,,,224092.96,229523.01,2.42,1.376
+CDB_C6_SET2024,fixed_income,,,,40478.75,40478.75,0.0,0.0
+CASH_BRL,cash,,,,74672.62,74672.62,0.0,0.0
+__TOTAL_PATRIMONIO__,,,,,394635.6,410704.08,4.07,4.07
+__TOTAL_INVESTIDO__,,,,,319962.98,336031.46,5.02,
+__CDI__,benchmark,,,,,,1.06,
+__IBOV__,benchmark,,,,,,3.69,
+__BENCH_75CDI_25IBOV__,benchmark,,,,,,1.71,

@@ -19,10 +19,11 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from contracts import DataQualityIssue, MetricsPack, PositionMetric  # noqa: E402
 
-from context import CLIENT_ID, OUT, REF, PROC  # noqa: E402
+from context import CLIENT_ID, OUT, REF, PROC, period_id, period_bounds, br_date  # noqa: E402
 
 CLIENT = CLIENT_ID
-START, END = "2025-03-31", "2025-04-30"
+PERIOD = period_id()
+START, END = period_bounds(PERIOD)
 # Policy benchmark for a "moderado" mandate. Declared, not implied - the v1
 # quoted a benchmark that existed in no input file.
 BENCH_NAME, W_CDI, W_IBOV = "75% CDI + 25% Ibovespa", 0.75, 0.25
@@ -152,9 +153,12 @@ pack = MetricsPack(
 # The golden file is Albert's hand-checked answer key. Other clients have no
 # such reference, so they are reported without it rather than silently
 # "passing" a check that was never run.
-golden_path = REF / "golden_portfolio_apr2025.csv"
-if CLIENT != "ALBERT" or not golden_path.exists():
-    print(f"\n(sem arquivo golden para {CLIENT}: validacao numerica nao executada)")
+# The answer key belongs to a period: it is a hand-check of one month's
+# numbers, so it is named after that month and looked up by it.
+golden_path = REF / f"golden_portfolio_{PERIOD}.csv"
+if not golden_path.exists():
+    print(f"\n(sem gabarito para {CLIENT} em {PERIOD} "
+          f"[{golden_path.name}]: validacao numerica nao executada)")
     print(f"metrics_pack.json -> {OUT / 'metrics_pack.json'}")
     raise SystemExit(0)
 golden = pd.read_csv(golden_path)
@@ -170,15 +174,31 @@ for _, g in golden.iterrows():
     m = next((x for x in metrics if x.instrument_id == gid), None)
     if gid == "FUNDS_BUCKET":
         got0 = sum(x.value_start for x in metrics if instruments.loc[x.instrument_id, "type"] == "fund")
-        chk("FUNDS_BUCKET valor 31/03", got0, float(g["value_2025_03_31"]), 0.05); continue
+        chk(f"FUNDS_BUCKET valor {br_date(START)}", got0, float(g["value_start"]), 0.05); continue
     if m is None: continue
-    chk(f"{gid} valor 31/03", m.value_start, float(g["value_2025_03_31"]), 0.05)
-    chk(f"{gid} retorno", m.return_pct, float(g["return_apr_pct"]), 0.02)
-chk("PATRIMONIO 31/03", pack.total_value_start, 394635.60, 0.05)
-chk("PATRIMONIO retorno", pack.total_return_pct, 4.07, 0.02)
-chk("INVESTIDO retorno", pack.invested_return_pct, 5.02, 0.02)
-chk("CDI abril", pack.cdi_return_pct, 1.06, 0.02)
-chk("IBOV abril", pack.ibov_return_pct, 3.69, 0.02)
+    chk(f"{gid} valor {br_date(START)}", m.value_start, float(g["value_start"]), 0.05)
+    chk(f"{gid} retorno", m.return_pct, float(g["return_pct"]), 0.02)
+# The totals were typed into this file AND present in the answer key, so an
+# updated key would have been silently ignored here. They are read from it.
+_g = golden.set_index("id")
+
+
+def gold(row: str, col: str):
+    return float(_g.loc[row, col]) if row in _g.index else None
+
+
+for _row, _col, _label, _got, _tol in (
+        ("__TOTAL_PATRIMONIO__", "value_start", f"PATRIMONIO {br_date(START)}",
+         pack.total_value_start, 0.05),
+        ("__TOTAL_PATRIMONIO__", "return_pct", "PATRIMONIO retorno",
+         pack.total_return_pct, 0.02),
+        ("__TOTAL_INVESTIDO__", "return_pct", "INVESTIDO retorno",
+         pack.invested_return_pct, 0.02),
+        ("__CDI__", "return_pct", "CDI do periodo", pack.cdi_return_pct, 0.02),
+        ("__IBOV__", "return_pct", "IBOV do periodo", pack.ibov_return_pct, 0.02)):
+    _exp = gold(_row, _col)
+    if _exp is not None:
+        chk(_label, _got, _exp, _tol)
 
 print(f"{'posicao':22} {'31/03':>13} {'30/04':>13} {'peso':>7} {'retorno':>9} {'contrib':>9}")
 for m in sorted(metrics, key=lambda x: -x.contribution_pp):
@@ -194,7 +214,7 @@ print(f"\nCDI {pack.cdi_return_pct:.2f}%   Ibovespa {pack.ibov_return_pct:.2f}% 
 print(f"Excesso sobre o benchmark: {pack.excess_return_pp:+.2f} pp")
 print(f"Caixa: R$ {pack.cash_value:,.2f} ({pack.cash_pct_of_total:.1f}% do patrimonio)")
 print(f"Cobertura de marcacao: {pack.coverage_pct:.1f}% do investido")
-print("\n--- validacao contra golden_portfolio_apr2025.csv")
+print(f"\n--- validacao contra {golden_path.name}")
 for label, got, exp, ok in checks:
     print(f"  {'OK ' if ok else 'ERRO'} {label:30} obtido={got:>14,.2f}  esperado={exp:>14,.2f}")
 print(f"\nmetrics_pack.json -> {OUT / 'metrics_pack.json'}")

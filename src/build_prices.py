@@ -16,6 +16,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from contracts import DataQualityIssue  # noqa: E402
+from context import periods, period_bounds, period_months  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 REF = ROOT / "data" / "reference"
@@ -30,7 +31,12 @@ CVM_DIRS = [RAW / "cvm", ROOT / "CSVs exportados CVM"]
 # reads that extract instead. Same numbers, 30 KB, and the project stays
 # runnable on a host that has no access to the originals.
 CVM_EXTRACT = RAW / "cvm_extract" / "fund_quotas.csv"
-PERIOD_START, PERIOD_END = "2025-03-31", "2025-04-30"
+# Reference period comes from the registry, never from this file. With more
+# than one period on the roster the shared price table has to span all of them,
+# so the corporate-action cutoff is the latest close.
+PERIODS = periods()
+PERIOD_START = min(period_bounds(p)[0] for p in PERIODS)
+PERIOD_END = max(period_bounds(p)[1] for p in PERIODS)
 RUN_ID = datetime.now(timezone.utc).strftime("run_%Y%m%dT%H%M%SZ")
 
 issues: list[DataQualityIssue] = []
@@ -92,7 +98,19 @@ cvm_rows_before = len(prices)
 daily = instruments[(instruments["type"] == "fund") &
                     (instruments["pricing_source"] == "cvm_inf_diario")]
 wanted = {digits(r["cnpj"]): r["instrument_id"] for _, r in daily.iterrows()}
-for ym in ("202404", "202503", "202504"):
+# Months the funds need: each period and the month before it, plus the month
+# of every statement anchor date, because that is where a quota count is
+# derived from a statement value.
+# Only positions whose quota count is BACKED OUT of a statement value need a
+# quota on the anchor date. A share position anchored on the same day needs
+# nothing from the CVM, and asking for that month produces a missing-file
+# warning about a file the pipeline never uses.
+_pos = pd.read_csv(REF / "positions.csv", dtype=str).fillna("")
+_pos = _pos[_pos["quantity_basis"] == "derive_from_value"]
+_anchors = {str(d).replace("-", "")[:6] for d in _pos["statement_value_date"] if str(d).strip()}
+CVM_MONTHS = sorted({m for p in PERIODS for m in period_months(p)} | _anchors)
+print(f"[cvm] meses necessarios: {', '.join(CVM_MONTHS)}")
+for ym in CVM_MONTHS:
     f = cvm_file(f"inf_diario_fi_{ym}.csv")
     if f is None:
         log("warning", "missing_cvm_file", f"inf_diario_fi_{ym}.csv not found")
@@ -111,7 +129,9 @@ for ym in ("202404", "202503", "202504"):
 fidc = instruments[instruments["pricing_source"] == "cvm_inf_mensal_fidc"]
 for _, ins in fidc.iterrows():
     iid, key = ins["instrument_id"], digits(ins["cnpj"])
-    for ym in ("202503", "202504"):
+    # The FIDC informe is monthly and its series starts at the fund's
+    # re-registration, so only the period months are asked for.
+    for ym in sorted({m for p in PERIODS for m in period_months(p)}):
         fq, fp = cvm_file(f"inf_mensal_fidc_tab_X_2_{ym}.csv"), cvm_file(f"inf_mensal_fidc_tab_IV_{ym}.csv")
         if fq is None or fp is None:
             log("warning", "missing_cvm_file", f"FIDC tabs for {ym} not found", iid)
@@ -240,4 +260,12 @@ for sev in ("blocker", "warning", "info"):
             print(f"      [{i.code}] {i.message}")
 print(f"\nbanco  {db}")
 print("=" * 64)
-print("VALIDACAO OK" if fail == 0 else f"VALIDACAO FALHOU: {fail} divergencias")
+# A gate that prints its verdict and exits 0 is not a gate. A golden
+# mismatch, or any blocker in the quality log, stops the run here - before a
+# wrong price can reach a client letter.
+blockers = [i for i in issues if i.severity == "blocker"]
+if fail or blockers:
+    print(f"VALIDACAO FALHOU: {fail} divergencia(s) no gabarito, "
+          f"{len(blockers)} impedimento(s) de qualidade de dados")
+    sys.exit(1)
+print("VALIDACAO OK")

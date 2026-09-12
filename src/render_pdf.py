@@ -20,7 +20,8 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from contracts import MetricsPack  # noqa: E402
 
-from context import OUT, ROOT, client  # noqa: E402
+from context import (OUT, ROOT, client, period_id, period_bounds,  # noqa: E402
+                     period_label, br_date)
 
 TPL, ASSETS = ROOT / "templates", ROOT / "assets"
 _c = client()
@@ -40,6 +41,11 @@ def brmoney(v: float) -> str:
 
 def brpct(v: float) -> str:
     return f"{v:.2f}".replace(".", ",") + "%"
+
+
+PERIOD = period_id()
+_start, _end = period_bounds(PERIOD)
+_label, _year = period_label(PERIOD)
 
 
 def build_html(fit: float = 1.0, show_annex: bool = True) -> str:
@@ -63,12 +69,12 @@ def build_html(fit: float = 1.0, show_annex: bool = True) -> str:
         "kpi_note": f"No período: CDI {brpct(pack.cdi_return_pct)} · "
                     f"Ibovespa {brpct(pack.ibov_return_pct)}.",
         "kicker": "Relatório Mensal", "brand": "XP Investimentos",
-        "period_label": "Abril", "year": "2025",
+        "period_label": _label, "year": _year,
         "title": "Relatório mensal de investimentos",
         "subtitle": f"{_c['name']} · Perfil {_c['profile']} · Conta {_c['account']}",
         "advisor": _c["advisor"],
         "advisor_role": f"Assessor de investimentos · Código {_c['advisor_code']}",
-        "date_start": "31/03/2025", "date_end": "30/04/2025", "run_id": pack.run_id,
+        "date_start": br_date(_start), "date_end": br_date(_end), "run_id": pack.run_id,
     }
     charts = {n: (OUT / "charts" / f"{n}.svg").read_text(encoding="utf-8")
               for n in ("contribution", "allocation")}
