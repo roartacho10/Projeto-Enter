@@ -20,6 +20,8 @@ import json
 import os
 import subprocess
 import sys
+from html import escape
+from src.email_report import send_report
 from src.allocation import MODEL_VERSION, fingerprint
 from src.context import br_date, period_bounds, period_label
 import pandas as pd
@@ -41,24 +43,14 @@ DEFAULT_MODEL = "gpt-4.1"
 MODELS = ["gpt-4.1", "gpt-4.1-mini", "gpt-4o"]
 
 st.set_page_config(page_title="Relatórios mensais · XP", page_icon="📄", layout="wide",
-                   initial_sidebar_state="expanded")
+                   initial_sidebar_state="collapsed")
 
 st.markdown("""
 <style>
-  /* Chrome removal, measured in a real browser rather than guessed.
-     stHeader is a 60px opaque strip: made transparent and zero-height, or it
-     reads as a white band above the page. The toolbar inside it is hidden -
-     but stExpandSidebarButton, the control that brings a collapsed sidebar
-     back, is a CHILD of that toolbar and inherits the hidden visibility. Two
-     earlier attempts failed exactly there, so it is un-hidden explicitly. */
-  #MainMenu, footer {visibility: hidden;}
-  [data-testid="stHeader"] {background: transparent;}   /* transparente, NAO height:0 -
-     o header e um overlay e nao empurra conteudo; zera-lo levava o botao de
-     expandir para top=-14px, cortado pela metade. Medido: 16px com esta regra,
-     a mesma altura do botao de recolher quando a lateral esta aberta. */
-  [data-testid="stToolbar"] {visibility: hidden; height: 0;}
-  [data-testid="stExpandSidebarButton"],
-  [data-testid="stExpandSidebarButton"] * {visibility: visible !important;}
+  #MainMenu, footer {visibility:hidden;}
+  [data-testid="stHeader"] {background:transparent;}
+  [data-testid="stToolbar"] {visibility:hidden; height:0;}
+  [data-testid="stExpandSidebarButton"], [data-testid="stSidebar"] {display:none !important;}
   .block-container {padding-top: 1.2rem; max-width: 1150px;}
   .band {background:#231F20; margin:0 0 1.4rem; padding:1.1rem 1.6rem; border-radius:6px;
          display:flex; align-items:center; justify-content:space-between;}
@@ -91,7 +83,11 @@ st.markdown("""
   .state.one {grid-template-columns:1fr;}
   .state .r {display:flex; justify-content:space-between; align-items:baseline; gap:1rem;
              border-bottom:1px solid #F1F1EF; padding:.3rem .1rem; font-size:.86rem;}
-  .state .r .k {color:#5A5A5A;}
+  .state .r .k {color:#5A5A5A; white-space:nowrap;}
+  .state .r .v {min-width:0;}
+  .adjustments {table-layout:fixed;}
+  .mtable.adjustments th, .mtable.adjustments td {white-space:normal; overflow-wrap:anywhere;}
+  .adjustments th:nth-child(2), .adjustments td:nth-child(2) {width:60%; text-align:left;}
   .state .r .v {white-space:nowrap; color:#5A5A5A;}
   .state .r .v em {font-style:normal; font-weight:700; color:#1A1A1A;}
   /* One table for the month: two dated columns and the variation between
@@ -356,34 +352,10 @@ if not st.session_state.get("entrou"):
 band(f'{_crow["advisor"]} · Código {_crow["advisor_code"]} · '
      f'Período de referência: {_mes.lower()} de {_ano}')
 
-with st.sidebar:
-    st.markdown("#### Configuração")
-    key, key_src = ambient_key()
-    if key:
-        st.caption(f"Chave da OpenAI: configurada ({key_src}).")
-        with st.expander("Usar outra chave"):
-            override = st.text_input("Chave da OpenAI", type="password", placeholder="sk-...",
-                                     label_visibility="collapsed", key="key_override",
-                                     help="Vale só para esta sessão do navegador.")
-            key = override or key
-    else:
-        key = st.text_input("Chave da OpenAI", type="password", placeholder="sk-...",
-                            key="key_sidebar",
-                            help="Para não precisar digitar de novo, configure "
-                                 "OPENAI_API_KEY no ambiente ou em .streamlit/secrets.toml.")
+top_title, top_sync = st.columns([20, 1], vertical_alignment="center")
+top_title.markdown('<p class="sectitle">Carteira de clientes</p>', unsafe_allow_html=True)
+atualizar = top_sync.button("", icon=":material/sync:", help="Atualizar dados")
 
-    model = secret("MODEL_LETTER") or DEFAULT_MODEL
-    st.caption(f"Modelo de redação: **{model}**")
-    with st.expander("Trocar modelo"):
-        opts = [model] + [m for m in MODELS if m != model]
-        model = st.selectbox("Modelo de redação", opts, index=0, label_visibility="collapsed")
-
-    st.divider()
-    atualizar = st.button("Atualizar dados", width="stretch")
-
-# The click is read in the sidebar but handled here, so the progress panel
-# opens in the main column instead of being squeezed into the sidebar. It also
-# runs before queue(), so the page is built from the numbers it just produced.
 if atualizar:
     failed, log = run(TRIAGE, ACTIVE)
     st.session_state["log"] = log
@@ -397,7 +369,6 @@ q = queue()
 active = q[q["_active"]].iloc[0]
 
 # ---------------------------------------------------------------- client menu
-st.markdown('<p class="sectitle">Carteira de clientes</p>', unsafe_allow_html=True)
 
 cards = st.columns(len(q))
 for col, (_, r) in zip(cards, q.iterrows()):
@@ -510,7 +481,6 @@ if pack and allocation:
         ("Perfil e horizonte",
          f'<em>{prof["risk_class"]}</em> · horizonte {prof["horizon"].lower()}'
          if prof is not None else f'<em>{active["Perfil"]}</em>'),
-        ("Teto de renda variável", f'<em>{pct(allocation["rv_ceiling_pct"])}</em> do patrimônio'),
     ]
     if prof is not None and prof["objective_quote"]:
         linhas_perfil.append(("Objetivo declarado", f'“{prof["objective_quote"]}”'))
@@ -537,13 +507,6 @@ if pack and plan and plan.get("class_mix"):
     corpo = ""
     for r in plan["class_mix"]:
         nota = ""
-        # The suitability rule measures equity against the INVESTED balance,
-        # this table against total wealth. Both are legitimate and they differ
-        # by the cash; naming the other base here is what keeps the two
-        # readings from looking like a contradiction.
-        if r["asset_class"] == "RV" and rec:
-            nota = (f'<div class="sub">{pct(rec["equity_lookthrough_pct"])} do investido, '
-                    f'base do teto de suitability</div>')
         corpo += (f'<tr><td>{r["label"]}{nota}</td><td>{brl(r["before_brl"])}</td>'
                   f'<td>{pct(r["before_pct"])}</td><td>{pct(r["target_pct"])}</td>'
                   f'<td>{col_alvo(r["before_pct"], r["target_pct"])}</td></tr>')
@@ -590,21 +553,19 @@ if pack:
     if plan and plan["trades"]:
         st.markdown("**Ajustes sugeridos**")
         verbo = {"sell": "Vender", "redeem": "Resgatar", "buy": "Aplicar"}
-        st.dataframe(pd.DataFrame([{
-            "Operação": verbo[t["action"]],
-            "Ativo ou destino": t["instrument_id"] or f"{t['category']} — {t['criteria']}",
-            "Valor": brl(t["amount_brl"]),
-            "Produtos distintos (mín.)": str(t.get("min_products") or "—")} for t in plan["trades"]]),
-            width="stretch", hide_index=True)
+        rows = "".join(
+            "<tr>" + "".join(f"<td>{escape(str(value))}</td>" for value in (
+                verbo[t["action"]],
+                t["instrument_id"] or f"{t['category']} — {t['criteria']}",
+                brl(t["amount_brl"]), t.get("min_products") or "—")) + "</tr>"
+            for t in plan["trades"])
+        st.markdown('<table class="mtable adjustments"><thead><tr><th>Operação</th>'
+                    '<th>Ativo ou destino</th><th>Valor</th><th>Produtos mín.</th>'
+                    f'</tr></thead><tbody>{rows}</tbody></table>', unsafe_allow_html=True)
         st.caption("Sugestões, sem execução de operações. "
                    + ("Alvos e limites por produto conferidos na simulação. " if plan["resolved"]
                       else "A simulação ainda apresenta pendências. ")
                    + f"Caixa após: {brl(plan['cash_after_brl'])}.")
-        with st.expander("Carteira simulada e premissas das operações"):
-            st.dataframe(pd.DataFrame(plan["post_positions"]), hide_index=True, width="stretch")
-            for assumption in plan["assumptions"]:
-                st.write(assumption)
-
 # ---------------------------------------------------------------- history
 hist = load(cid, "history.json")
 if hist:
@@ -644,6 +605,29 @@ if hist:
 # ---------------------------------------------------------------- letter
 st.markdown('<p class="sectitle">Relatório do cliente</p>', unsafe_allow_html=True)
 
+with st.expander("Configura\u00e7\u00e3o do relat\u00f3rio"):
+    st.markdown("#### Configuração")
+    key, key_src = ambient_key()
+    if key:
+        st.caption(f"Chave da OpenAI: configurada ({key_src}).")
+        with st.expander("Usar outra chave"):
+            override = st.text_input("Chave da OpenAI", type="password", placeholder="sk-...",
+                                     label_visibility="collapsed", key="key_override",
+                                     help="Vale só para esta sessão do navegador.")
+            key = override or key
+    else:
+        key = st.text_input("Chave da OpenAI", type="password", placeholder="sk-...",
+                            key="key_sidebar",
+                            help="Para não precisar digitar de novo, configure "
+                                 "OPENAI_API_KEY no ambiente ou em .streamlit/secrets.toml.")
+
+    model = secret("MODEL_LETTER") or DEFAULT_MODEL
+    st.caption(f"Modelo de redação: **{model}**")
+    with st.expander("Trocar modelo"):
+        opts = [model] + [m for m in MODELS if m != model]
+        model = st.selectbox("Modelo de redação", opts, index=0, label_visibility="collapsed")
+
+
 pdf_p, html_p = OUT / cid / "letter.pdf", OUT / cid / "letter.html"
 generation = load(cid, "generation_log.json") or {}
 current_figures = load(cid, "figures.json") or {}
@@ -661,7 +645,7 @@ a = st.columns([2, 1, 1])
 if a[0].button(f"Gerar relatório de {name.split()[0]}", type="primary",
                width="stretch", disabled=not current_plan):
     if not key:
-        st.error("Informe a chave da OpenAI na barra lateral.")
+        st.error("Informe a chave da OpenAI na configuração do relatório.")
     else:
         failed, log = run(LETTER, cid, key=key, model=model)
         st.session_state["log"] = log
@@ -686,6 +670,29 @@ elif current_letter and html_p.exists() and a[1].button("Gerar PDF", width="stre
 if current_letter and html_p.exists():
     a[2].download_button("Baixar HTML", html_p.read_bytes(), f"relatorio_{cid.lower()}.html",
                          "text/html", width="stretch")
+
+if current_letter and html_p.exists():
+    email_col, send_col = st.columns([3, 1], vertical_alignment="bottom")
+    recipient = email_col.text_input("E-mail do destinatário", placeholder="cliente@exemplo.com")
+    settings = {k: secret(k) for k in (
+        "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "SMTP_FROM")}
+    settings["SMTP_HOST"] = settings["SMTP_HOST"] or "smtp.gmail.com"
+    settings["SMTP_FROM"] = settings["SMTP_FROM"] or settings["SMTP_USER"]
+    configured = bool(settings["SMTP_USER"] and settings["SMTP_PASSWORD"])
+    if send_col.button("Enviar por e-mail", width="stretch", disabled=not configured):
+        attachments = [(f"relatorio_{cid.lower()}.html", html_p.read_bytes(), "text/html")]
+        if layout.get("pdf_ready") and pdf_p.exists():
+            attachments.insert(0, (f"relatorio_{cid.lower()}.pdf", pdf_p.read_bytes(), "application/pdf"))
+        try:
+            with st.spinner("Enviando relatório..."):
+                send_report(recipient.strip(), attachments, settings)
+            st.success("Relatório enviado ao servidor de e-mail.")
+        except ValueError as exc:
+            st.error(str(exc))
+        except Exception:
+            st.error("Não foi possível confirmar o envio. Confira a conta remetente antes de tentar novamente.")
+    if not configured:
+        st.caption("Para habilitar o envio pelo Gmail, configure SMTP_USER e SMTP_PASSWORD nos Secrets do Streamlit.")
 
 if current_letter and rep is not None:
     blockers = [r for r in rep if r["severity"] == "blocker"]

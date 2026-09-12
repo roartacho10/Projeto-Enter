@@ -180,7 +180,7 @@ def test_table_groups_every_position_and_loses_none(ran):
     """
     import re
     app = _desk(ran)
-    html = "".join(m.value for m in app.markdown if "mtable" in str(m.value))
+    html = "".join(m.value for m in app.markdown if '<th>Métrica</th>' in str(m.value))
     for titulo in ("Ações", "Fundos", "CDBs e caixa"):
         assert f">{titulo}</td>" in html, f"seção {titulo} ausente"
     pack = stage_out(ran, "metrics_pack.json")
@@ -204,7 +204,7 @@ def test_month_table_shows_every_position_with_the_packs_own_numbers(ran):
     """
     app = _desk(ran)
     assert not app.exception, [e.message for e in app.exception]
-    html = "".join(m.value for m in app.markdown if "mtable" in str(m.value))
+    html = "".join(m.value for m in app.markdown if '<th>Métrica</th>' in str(m.value))
     assert html, "a tabela do mes nao foi renderizada"
     pack = stage_out(ran, "metrics_pack.json")
     for m in pack["positions"]:
@@ -228,7 +228,7 @@ def test_references_show_only_a_variation_never_a_balance(ran):
     """
     import re
     app = _desk(ran)
-    html = "".join(m.value for m in app.markdown if "mtable" in str(m.value))
+    html = "".join(m.value for m in app.markdown if '<th>Métrica</th>' in str(m.value))
     pack = stage_out(ran, "metrics_pack.json")
     for rotulo, valor in (("CDI", pack["cdi_return_pct"]), ("IPCA", pack["ipca_return_pct"])):
         linha = re.search(rf"<tr><td>{rotulo}</td>(.*?)</tr>", html)
@@ -262,7 +262,7 @@ def test_current_and_target_are_measured_against_the_same_base(ran):
     measures against the invested balance and the class target is applied to
     total wealth, and both were on screen as plain percentages. Now every
     share in the table is of the closing patrimony, each column adds to 100,
-    and the rule's own base is named where it differs.
+    and the simplified interface omits the separate suitability-base subtitle.
     """
     plan = stage_out(ran, "rebalance_plan.json")
     pack = stage_out(ran, "metrics_pack.json")
@@ -280,10 +280,7 @@ def test_current_and_target_are_measured_against_the_same_base(ran):
     assert alvo["CASH"] == 0
     app = _desk(ran)
     html = "".join(str(m.value) for m in app.markdown)
-    rec = stage_out(ran, "recommendations.json")
-    assert "base do teto de suitability" in html, \
-        "a tela nao diz que o teto de RV mede contra outra base"
-    assert f"{rec['equity_lookthrough_pct']:.2f}".replace(".", ",") + "%" in html
+    assert "base do teto de suitability" not in html
 
 
 def test_an_index_fund_basket_is_not_reported_as_a_breach(ran):
