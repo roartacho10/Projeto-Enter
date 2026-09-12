@@ -1,5 +1,6 @@
 """Render the user's production letter through the real two-page layout gate."""
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -8,12 +9,13 @@ from allocation import MODEL_VERSION, fingerprint
 from conftest import stage_out
 
 
-def test_production_letter_fits_two_pages(ran, monkeypatch):
+@pytest.mark.parametrize("fixture", ["streamlit_letter_2025_04.txt", "streamlit_letter_layout_overflow.txt"])
+def test_production_letter_fits_two_pages(ran, monkeypatch, fixture):
     from playwright.sync_api import sync_playwright
     import render_pdf
     out = ran / "output/ALBERT"
     monkeypatch.setattr(render_pdf, "OUT", out)
-    text = (Path(__file__).parent / "fixtures/streamlit_letter_2025_04.txt").read_text(encoding="utf-8")
+    text = (Path(__file__).parent / "fixtures" / fixture).read_text(encoding="utf-8")
     paragraphs = text.strip().split("\n\n")
     sections = {"highlights": paragraphs[:3], "greeting": paragraphs[3],
                 "performance": paragraphs[4], "macro": paragraphs[5],
@@ -34,13 +36,21 @@ def test_production_letter_fits_two_pages(ran, monkeypatch):
             try:
                 page = browser.new_page()
                 attempts = []
-                for fit, annex, label in render_pdf.FIT_STEPS:
-                    html = render_pdf.build_html(fit, annex)
+                for fit, annex, macro_first, label in render_pdf.layout_candidates():
+                    html = render_pdf.build_html(fit, annex, macro_first)
                     overflow = render_pdf.measure(page, html)
                     attempts.append((label, overflow))
                     if not overflow:
                         assert page.locator(".page").count() == 2
-                        assert "Concentração em Riza Lotus" in html
+                        for paragraph in paragraphs[:-1]:
+                            assert paragraph in page.locator("body").inner_text()
+                        assert page.get_by_text(sections["macro"], exact=True).count() == 1
+                        print(f"{fixture}: {label}")
+                        if os.environ.get("ENTER_LAYOUT_QA_DIR"):
+                            qa = Path(os.environ["ENTER_LAYOUT_QA_DIR"])
+                            qa.mkdir(parents=True, exist_ok=True)
+                            for i, sheet in enumerate(page.locator(".page").all(), 1):
+                                sheet.screenshot(path=str(qa / f"{Path(fixture).stem}-{i}.png"))
                         break
                 else:
                     pytest.fail(f"Production letter does not fit: {attempts}")

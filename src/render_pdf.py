@@ -50,7 +50,7 @@ _start, _end = period_bounds(PERIOD)
 _label, _year = period_label(PERIOD)
 
 
-def build_html(fit: float = 1.0, show_annex: bool = True) -> str:
+def build_html(fit: float = 1.0, show_annex: bool = True, macro_first: bool = False) -> str:
     pack = MetricsPack.model_validate_json((OUT / "metrics_pack.json").read_text(encoding="utf-8"))
     figures = json.loads((OUT / "figures.json").read_text(encoding="utf-8"))
     letter = json.loads((OUT / "letter_sections.json").read_text(encoding="utf-8"))
@@ -146,7 +146,7 @@ def build_html(fit: float = 1.0, show_annex: bool = True) -> str:
     from markupsafe import Markup
     doc["fit"] = f"{fit:.3f}"
     return tpl.render(doc=doc, letter=letter, figures=figures, kpi_rows=kpi_rows,
-                      pos_cols=pos_cols, assets=assets, show_annex=show_annex,
+                      pos_cols=pos_cols, assets=assets, show_annex=show_annex, macro_first=macro_first,
                       trade_rows=trade_rows, plan_note=plan_note, allocation_note=allocation_note,
                       charts={k: Markup(v) for k, v in charts.items()})
 
@@ -161,6 +161,14 @@ FIT_STEPS = [
     (0.940, False, "reduzido 6%, sem o anexo de posições"),
     (0.910, False, "reduzido 9%, sem o anexo de posições"),
 ]
+
+
+def layout_candidates():
+    """Use spare first-page space before reducing text or omitting the annex."""
+    for fit, annex, label in FIT_STEPS:
+        for macro_first in (False, True):
+            description = label + (", macro na primeira página" if macro_first else "")
+            yield fit, annex, macro_first, description
 
 
 def measure(page, html: str) -> list[dict]:
@@ -249,8 +257,8 @@ if __name__ == "__main__":
             sys.exit(0)
         print(f"  usando {how}")
         pg = b.new_page()
-        for fit, annex, label in FIT_STEPS:
-            html = build_html(fit, annex)
+        for fit, annex, macro_first, label in layout_candidates():
+            html = build_html(fit, annex, macro_first)
             overflow = measure(pg, html)
             if not overflow:
                 chosen = (fit, annex, label)

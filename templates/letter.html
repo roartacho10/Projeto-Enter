@@ -89,6 +89,10 @@
   .disclaimer { border-top: 1px solid #D9D9D9; padding-top: 2mm;
                 color: #6B6B6B; font-size: 6.9pt; line-height: 1.35; text-align: justify; }
 </style></head><body style="--fit: {{ doc.fit }}">
+{% macro macro_section() %}
+  <h2>Cenário macroeconômico</h2>
+  <p class="body">{{ letter.macro }}</p>
+{% endmacro %}
 
 <section class="page"><div class="fit">
   <div class="kicker"><b>{{ doc.kicker }}</b> | <b>{{ doc.period_label }}</b>
@@ -124,6 +128,7 @@
     <figcaption><span class="ftitle">Contribuição de cada posição para o resultado do mês</span>
       <span class="fsource">Em pontos percentuais do patrimônio. {{ doc.idle_note }} Fonte: CVM, B3, cálculo próprio</span>
     </figcaption>{{ charts.contribution }}</figure>
+  {% if macro_first %}{{ macro_section() }}{% endif %}
 </div></section>
 
 <section class="page"><div class="fit">
@@ -132,8 +137,7 @@
     <img class="logo" src="{{ assets.logo_white }}" alt="XP Investimentos">
   </div>
 
-  <h2>Cenário macroeconômico</h2>
-  <p class="body">{{ letter.macro }}</p>
+  {% if not macro_first %}{{ macro_section() }}{% endif %}
 
   <figure>
     <figcaption><span class="ftitle">Composição da carteira ao fim do período</span>
