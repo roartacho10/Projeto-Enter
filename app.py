@@ -248,7 +248,7 @@ def run(stages, client=None, key=None, model=None) -> tuple[str | None, str]:
     if model:
         env["MODEL_LETTER"] = model
     transcript = []
-    with st.status("Processando...", expanded=True) as status:
+    with st.status("Processando...", expanded=False) as status:
         for name, desc in stages:
             status.update(label=desc)
             r = subprocess.run([sys.executable, str(SRC / f"{name}.py")], cwd=ROOT,
@@ -261,8 +261,23 @@ def run(stages, client=None, key=None, model=None) -> tuple[str | None, str]:
     return None, "\n".join(transcript)
 
 
+def queue_action(action: str, cid: str) -> None:
+    """Callbacks only remember the click; never block the page while it is stale."""
+    if not st.session_state.get("pending_action") and not st.session_state.get("processing_action"):
+        st.session_state["pending_action"] = (action, cid)
+
+
+def process_pending(action: str, cid: str) -> None:
+    """Run below the already-rendered button, with the usual inline progress."""
+    if st.session_state.get("pending_action") != (action, cid):
+        return
+    st.session_state.pop("pending_action")
+    process_action(action, cid)
+    st.rerun()
+
+
 def process_action(action: str, cid: str) -> None:
-    """Commit the action before the page rerenders; read freshly submitted widgets."""
+    """Read the submitted widgets after rendering them, outside the callback."""
     if st.session_state.get("processing_action"):
         return
     st.session_state["processing_action"] = action
@@ -368,8 +383,9 @@ if not st.session_state.get("entrou"):
         f[1].text_input("Código", value=str(_crow["advisor_code"]), disabled=True,
                         key="entrada_codigo")
         f[2].form_submit_button("Acessar", type="primary", width="stretch",
-                                on_click=process_action, args=("enter", ACTIVE),
-                                disabled=bool(st.session_state.get("processing_action")))
+                                on_click=queue_action, args=("enter", ACTIVE),
+                                disabled=bool(st.session_state.get("pending_action") or st.session_state.get("processing_action")))
+    process_pending("enter", ACTIVE)
     if st.session_state.get("log"):
         with st.expander("Detalhes técnicos"):
             st.code(st.session_state["log"], language="text")
@@ -667,8 +683,9 @@ if (pdf_p.exists() or html_p.exists()) and not current_letter:
 a = st.columns([2, 1, 1])
 
 a[0].button(f"Gerar carta de {name.split()[0]}", type="primary", key="generate_letter",
-            width="stretch", disabled=not current_plan or bool(st.session_state.get("processing_action")),
-            on_click=process_action, args=("letter", cid))
+            width="stretch", disabled=not current_plan or bool(st.session_state.get("pending_action") or st.session_state.get("processing_action")),
+            on_click=queue_action, args=("letter", cid))
+process_pending("letter", cid)
 
 if current_letter and layout.get("pdf_ready") and pdf_p.exists():
     a[1].download_button("Baixar PDF", pdf_p.read_bytes(), f"relatorio_{cid.lower()}.pdf",
