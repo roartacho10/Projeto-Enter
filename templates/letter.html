@@ -11,7 +11,7 @@
     color: #1A1A1A; font-size: 9.2pt; line-height: 1.45;
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
-  .page { width: 210mm; height: 297mm; padding: 0 18mm 11mm; position: relative;
+  .page { width: 210mm; height: 297mm; padding: 6mm 18mm 11mm; position: relative;
           overflow: hidden; page-break-after: always; }
   /* Auto-fit: the renderer measures the page and steps this down within declared
      bounds rather than letting prose length decide whether the layout survives. */
@@ -23,7 +23,7 @@
 
   /* ---- header, mirroring the XP research note ---- */
   .kicker { display: flex; justify-content: flex-end; align-items: baseline; gap: 6px;
-            font-size: 8.4pt; padding: 6mm 0 2.5mm; }
+            font-size: 8.4pt; padding: 0 0 2.5mm; }
   .kicker b { font-weight: 700; }
   .kicker span { color: #8A8A8A; }
   /* Page two repeats the band with the logo alone. The kicker row is kept as an
@@ -94,109 +94,20 @@
   .signature span { color: #4A4A4A; }
   .disclaimer { border-top: 1px solid #D9D9D9; padding-top: 2mm;
                 color: #6B6B6B; font-size: 6.9pt; line-height: 1.35; text-align: left; }
+  p.body, .disclaimer {text-align:justify;}
+  .band {margin-left:-5mm; margin-right:-5mm;}
+  .opening {margin-top:4mm !important;}
+  .executive {padding:0; background:none;}
+  .continuation {padding-top:9mm;}
+  table.kpi th:first-child, table.kpi td:first-child {padding-left:0;}
+  table.kpi th:last-child, table.kpi td:last-child {padding-right:0;}
+  .kpinote {margin-left:0; text-align:justify;}
+  table.monthly td {padding-top:.85mm; padding-bottom:.85mm;}
+  table.kpi .group td {font-weight:700; background:#F7F7F5; padding-top:1.5mm;}
+  .up {color:#216343;} .down {color:#A43832;}
+  table.trades {font-size:8.3pt;}
+  table.trades td.acao {font-weight:400;}
+  table.trades th:nth-child(2) {width:55%;}
 </style></head><body style="--fit: {{ doc.fit }}">
-{% macro macro_section() %}
-  <h2>Cenário macroeconômico</h2>
-  <p class="body">{{ letter.macro }}</p>
-{% endmacro %}
-
-<section class="page"><div class="fit">
-  <div class="kicker"><b>{{ doc.kicker }}</b> | <b>{{ doc.period_label }}</b>
-       <span>{{ doc.year }}</span></div>
-  <div class="band">
-    <p class="eyebrow">{{ doc.brand }}</p>
-    <h1>{{ doc.title }}</h1>
-    <p class="sub">{{ doc.subtitle }}</p>
-    <img class="logo" src="{{ assets.logo_white }}" alt="XP Investimentos">
-  </div>
-
-  <h2>Resumo executivo</h2>
-  <div class="highlights">
-    {% for h in letter.highlights %}<p>{{ h }}</p>{% endfor %}
-  </div>
-  <p class="body">{{ letter.greeting }}</p>
-
-  <h2>Desempenho da carteira</h2>
-  <p class="body">{{ letter.performance }}</p>
-
-  <table class="kpi">
-    <tr><th>Resumo do período</th><th class="n">{{ doc.date_start }}</th>
-        <th class="n">{{ doc.date_end }}</th><th class="n">Variação</th></tr>
-    {% for r in kpi_rows %}
-    <tr{% if r.total %} class="total"{% endif %}>
-      <td>{{ r.label }}</td><td class="n">{{ r.a }}</td>
-      <td class="n">{{ r.b }}</td><td class="n">{{ r.d }}</td></tr>
-    {% endfor %}
-  </table>
-  <p class="kpinote">{{ doc.kpi_note }}</p>
-
-  <figure>
-    <figcaption><span class="ftitle">Contribuição de cada posição para o resultado do mês</span>
-      <span class="fsource">Em pontos percentuais do patrimônio. {{ doc.idle_note }} Fonte: CVM, B3, cálculo próprio</span>
-    </figcaption>{{ charts.contribution }}</figure>
-  {% if macro_first %}{{ macro_section() }}{% endif %}
-</div></section>
-
-<section class="page"><div class="fit">
-  <div class="kicker spacer"><b>&nbsp;</b></div>
-  <div class="band cont">
-    <img class="logo" src="{{ assets.logo_white }}" alt="XP Investimentos">
-  </div>
-
-  {% if not macro_first %}{{ macro_section() }}{% endif %}
-
-  <figure>
-    <figcaption><span class="ftitle">Composição da carteira ao fim do período</span>
-      <span class="fsource">Valores marcados a mercado em {{ doc.date_end }}. Fonte: CVM, B3, cálculo próprio</span>
-    </figcaption>{{ charts.allocation }}</figure>
-
-  <h2>Recomendações</h2>
-  <p class="body">{{ allocation_note }}</p>
-  {% for para in letter.recommendations %}<p class="body">{{ para }}</p>{% endfor %}
-
-  {% if trade_rows %}
-  <table class="kpi trades">
-    <tr><th>Operação</th><th>Ativo ou destino</th><th class="n">Valor</th></tr>
-    {% for t in trade_rows %}
-    <tr><td class="acao">{{ t.acao }}</td><td>{{ t.alvo }}</td>
-        <td class="n">{{ t.valor }}</td></tr>
-    {% endfor %}
-  </table>
-  <p class="kpinote">{{ plan_note }}</p>
-  {% endif %}
-
-  <p class="body">{{ letter.coverage }}</p>
-  <p class="body">{{ letter.closing }}</p>
-
-  {% if show_annex %}
-  <h2>Detalhamento das posições em {{ doc.date_end }}</h2>
-  <div class="poswrap">
-    {% for col in pos_cols %}
-    <table class="kpi pos">
-      <tr><th>Posição</th><th class="n">Valor</th><th class="n">%</th><th class="n">Mês</th></tr>
-      {% for r in col %}
-      <tr><td>{{ r.name }}</td><td class="n">{{ r.value }}</td>
-          <td class="n">{{ r.weight }}</td><td class="n">{{ r.ret }}</td></tr>
-      {% endfor %}
-    </table>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  </div>
-  <div class="pagefoot">
-    <p class="signature"><b>{{ doc.advisor }}</b><span>{{ doc.advisor_role }}</span></p>
-    <!-- Client-facing disclosure only. The execution identifier and the
-         proof-of-concept caveat are part of the audit trail and live in
-         output/<cliente>/generation_log.json and layout_report.json. -->
-    <div class="disclaimer">
-      Os valores apresentados refletem marcação a mercado de {{ figures.cobertura_marcacao }} da
-      carteira investida; posições sem marcação disponível são informadas pelo último valor
-      constante do extrato. Rentabilidade passada não representa garantia de resultado futuro e os
-      valores não são líquidos de impostos. Este material não constitui oferta, recomendação
-      individualizada ou análise de valores mobiliários nos termos da Resolução CVM nº 20/2021.
-      Dados de mercado: CVM, B3 e Banco Central do Brasil.
-    </div>
-  </div>
-</section>
+{% include "letter_body.html" %}
 </body></html>

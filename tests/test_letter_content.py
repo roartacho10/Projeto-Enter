@@ -12,6 +12,17 @@ from letter_content import flatten_sections, normalize_sections, parse_sections
 from conftest import stage_out
 
 
+def test_emphasis_is_safe_and_plain_verification_keeps_exact_figures():
+    from letter_content import emphasised_html
+    html = str(emphasised_html('**Retorno de 4,07%.** <script>alert(1)</script>'))
+    assert '<strong>Retorno de 4,07%.</strong>' in html
+    assert '<script>' not in html and '&lt;script&gt;' in html
+    data = sample()
+    data['performance'] = '**Retorno de 4,07%.**'
+    assert 'Retorno de 4,07%.' in flatten_sections(data, 'Assessor')
+    assert '**' not in flatten_sections(data, 'Assessor')
+
+
 def sample():
     return {"highlights": ["Resumo para Albert."], "greeting": "Albert, segue o relatório.",
             "performance": "Resultado do período.", "macro": "Contexto econômico.",

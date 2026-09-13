@@ -1,0 +1,50 @@
+{% macro macro_section() %}
+<h2>Cenário macroeconômico</h2>
+<p class="body">{{ letter.macro | emphasis }}</p>
+{% endmacro %}
+<section class="page"><div class="fit">
+  <div class="kicker"><b>{{ doc.kicker }}</b> | <b>{{ doc.period_label }}</b> <span>{{ doc.year }}</span></div>
+  <div class="band">
+    <p class="eyebrow">{{ doc.brand }}</p><h1>{{ doc.title }}</h1>
+    <p class="sub">{{ doc.subtitle }}</p>
+    <img class="logo" src="{{ assets.logo_white }}" alt="XP Investimentos">
+  </div>
+  <p class="body opening">{{ letter.greeting | emphasis }}{% if 'Caso queira conversar sobre a alocação, estou disponível' not in letter.greeting %} Caso queira conversar sobre a alocação, estou disponível.{% endif %}</p>
+  <h2>Resumo executivo</h2>
+  <p class="body executive">{{ letter.highlights | join(' ') | emphasis }}</p>
+  <h2>Desempenho da carteira</h2>
+  <p class="body">{{ letter.performance | emphasis }}</p>
+  <table class="kpi monthly">
+    <thead><tr><th>Métrica</th><th class="n">{{ doc.date_start }}</th><th class="n">{{ doc.date_end }}</th><th class="n">Variação</th></tr></thead>
+    <tbody>{% for r in monthly_rows %}
+    {% if r.group %}<tr class="group"><td colspan="4">{{ r.group }}</td></tr>
+    {% else %}<tr{% if r.total %} class="total"{% endif %}><td>{{ r.label }}</td><td class="n">{{ r.start }}</td><td class="n">{{ r.end }}</td><td class="n {{ r.tone }}">{{ r.ret }}</td></tr>{% endif %}
+    {% endfor %}</tbody>
+  </table>
+  <p class="kpinote">CDI e IPCA são retornos do mês, comparáveis à variação; não representam saldos em carteira.</p>
+  {% if macro_first %}{{ macro_section() }}{% endif %}
+</div></section>
+<section class="page continuation"><div class="fit">
+  {% if not macro_first %}{{ macro_section() }}{% endif %}
+  <h2>Carteira hoje e alvo</h2>
+  <table class="kpi mix">
+    <thead><tr><th>Classe</th><th class="n">Hoje</th><th class="n">Hoje %</th><th class="n">Alvo %</th><th class="n">Distância</th></tr></thead>
+    <tbody>{% for r in mix_rows %}<tr><td>{{ r.label }}</td><td class="n">{{ r.value }}</td><td class="n">{{ r.before }}</td><td class="n">{{ r.target }}</td><td class="n">{{ r.gap }}</td></tr>{% endfor %}</tbody>
+  </table>
+  <p class="kpinote">Percentuais sobre o patrimônio de {{ doc.date_end }}; alvo = carteira após o ajuste.</p>
+  <h2>Recomendações</h2>
+  <p class="body">{{ allocation_note | emphasis }}</p>
+  {% for para in letter.recommendations %}<p class="body">{{ para | emphasis }}</p>{% endfor %}
+  <p class="body"><strong>O fundo de índice Ibovespa diversifica a exposição entre empresas</strong>, reduzindo a concentração em ações individuais, mas mantém o risco de mercado. Caso prefira escolher ações, observe o limite de 25% da cesta de renda variável por ação e o teto de {{ rv_ceiling }} de renda variável para seu perfil e horizonte.</p>
+  {% if trade_rows %}
+  <h2>Ajustes sugeridos</h2>
+  <table class="kpi trades">
+    <thead><tr><th>Operação</th><th>Ativo ou destino</th><th class="n">Valor</th><th class="n">Produtos<br>mín.</th></tr></thead>
+    <tbody>{% for t in trade_rows %}<tr><td class="acao">{{ t.acao }}</td><td>{{ t.alvo }}</td><td class="n">{{ t.valor }}</td><td class="n">{{ t.products }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% endif %}
+</div>
+<div class="pagefoot">
+  <p class="signature"><b>{{ doc.advisor }}</b><span>{{ doc.advisor_role }}</span></p>
+  <div class="disclaimer">Posições sem marcação a mercado disponível são informadas pelo último valor constante do extrato. Rentabilidade passada não representa garantia de resultado futuro e os valores não são líquidos de impostos. Este material não constitui oferta, recomendação individualizada ou análise de valores mobiliários nos termos da Resolução CVM nº 20/2021. Dados de mercado: CVM, B3 e Banco Central do Brasil.</div>
+</div></section>

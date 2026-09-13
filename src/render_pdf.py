@@ -80,20 +80,14 @@ def build_html(fit: float = 1.0, show_annex: bool = True, macro_first: bool = Fa
                      f"{brpct(pack.real_return_total_pct)}. "
                      f"Ibovespa no período: {brpct(pack.ibov_return_pct)}, como "
                      f"referência de mercado."),
-        "kicker": "Relatório Mensal", "brand": "XP Investimentos",
+        "kicker": "Carta Mensal", "brand": "XP Investimentos",
         "period_label": _label, "year": _year,
-        "title": "Relatório mensal de investimentos",
+        "title": "Carta mensal de investimentos",
         "subtitle": f"{_c['name']} · Perfil {_c['profile']} · Conta {_c['account']}",
         "advisor": _c["advisor"],
         "advisor_role": f"Assessor de investimentos · Código {_c['advisor_code']}",
         "date_start": br_date(_start), "date_end": br_date(_end), "run_id": pack.run_id,
     }
-    charts = {n: (OUT / "charts" / f"{n}.svg").read_text(encoding="utf-8")
-              for n in ("contribution", "allocation")}
-    idle_path = OUT / "charts" / "contribution_idle.json"
-    idle = json.loads(idle_path.read_text(encoding="utf-8")) if idle_path.exists() else []
-    doc["idle_note"] = ("Sem contribuição: " + ", ".join(idle) + ".") if idle else ""
-
     ins = pd.read_csv(ROOT / "data" / "reference" / "instruments.csv",
                       dtype=str).fillna("").set_index("instrument_id")
     pos_rows = [
@@ -103,45 +97,61 @@ def build_html(fit: float = 1.0, show_annex: bool = True, macro_first: bool = Fa
          "ret": brpct(m.return_pct) if abs(m.return_pct) > 0.004 else "—"}
         for m in sorted(pack.positions, key=lambda x: -x.value_end)]
     # Rebalance plan: sells name instruments, the purchase names a family.
+    plan = {}
     plan_p, trade_rows, plan_note = OUT / "rebalance_plan.json", [], ""
     if plan_p.exists():
         plan = json.loads(plan_p.read_text(encoding="utf-8"))
         verbo = {"sell": "Vender", "redeem": "Resgatar", "buy": "Aplicar"}
-        rv_sales = [t for t in plan["trades"] if t["action"] == "sell" and t.get("asset_class") == "RV"]
-        if rv_sales:
-            trade_rows.append({"acao": "Sugerir venda", "alvo": "Todas as posições atuais de RV",
-                               "valor": brmoney(sum(t["amount_brl"] for t in rv_sales))})
         for t_ in plan["trades"]:
-            if t_ in rv_sales:
-                continue
-            alvo = (ins.loc[t_["instrument_id"], "display_name"] if t_["instrument_id"]
-                    else f"{t_['category']} — {t_['criteria']}")
-            if t_.get("min_products"):
-                alvo += f" (mín. {t_['min_products']} produtos)"
-            trade_rows.append({"acao": verbo[t_["action"]], "alvo": alvo,
-                               "valor": brmoney(t_["amount_brl"])})
-        # Client-facing wording. The mechanism behind the plan - the rules
-        # engine, the count of breaches it cleared - belongs to the audit
-        # trail in rebalance_plan.json, not to the person reading the letter.
-        plan_note = ("Sugestões sujeitas à aprovação do cliente. Na simulação, caixa zero e limites "
-                     "por produto atendidos; sem impostos, custos, liquidez ou lotes. "
-                     "RF: até 25% da cesta por produto. Seleção própria de ações: até 25% da cesta RV "
-                     "por ação; o fundo de índice pode ocupar toda a cesta RV e mantém risco de mercado.")
-        if plan.get("pending_reviews"):
-            plan_note += " Permanecem revisões de categorias de investimentos; conferir com o assessor."
+            trade_rows.append({"acao": verbo[t_["action"]],
+                               "alvo": (ins.loc[t_["instrument_id"], "display_name"]
+                                        if t_["instrument_id"] else f"{t_['category']} - {t_['criteria']}"),
+                               "valor": brmoney(t_["amount_brl"]),
+                               "products": t_.get("min_products") or "-"})
     allocation_note = (
-        f"Alvo pelo modelo: RV {brpct(allocation['target_rv_pct'])}, RF {brpct(allocation['target_rf_pct'])}, caixa zero. "
-        f"De {br_date(allocation['start'])} a {br_date(allocation['end'])}, retorno real estimado acumulado: "
-        f"RV {brpct(allocation['rv_real_cumulative_pct'])}; RF {brpct(allocation['rf_real_cumulative_pct'])}. "
-        "Estimativas por classe, sem impostos e custos: RV = PIB real + dividend yield assumido; "
-        "RF = Selic descontada do IPCA, usando a taxa de fim de ano como aproximação anual. "
-        "RF inclui crédito e multimercados com riscos diferentes.")
+        f"**A distribuição sugerida é de {brpct(allocation['target_rv_pct'])} em renda variável "
+        f"e {brpct(allocation['target_rf_pct'])} em renda fixa, com o saldo disponível reinvestido.** "
+        f"De {br_date(allocation['start'])} a {br_date(allocation['end'])}, o ganho estimado acima da inflação "
+        f"é de {brpct(allocation['rv_real_cumulative_pct'])} para a renda variável e "
+        f"{brpct(allocation['rf_real_cumulative_pct'])} para a renda fixa, antes de impostos e custos. "
+        "São projeções, não garantias. Os riscos variam conforme o produto escolhido.")
 
-    half = (len(pos_rows) + 1) // 2
-    pos_cols = [pos_rows[:half], pos_rows[half:]]
+    monthly_rows = []
+    def month_row(label, start, end, ret, **extra):
+        return dict(label=label, start=brmoney(start), end=brmoney(end),
+                    ret=(f"{ret:+.2f}".replace(".", ",") + "%") if abs(ret) >= .005 else "-",
+                    tone="up" if ret > .005 else "down" if ret < -.005 else "neutral", **extra)
+    monthly_rows.append(month_row("Patrimônio", pack.total_value_start, pack.total_value_end,
+                                  pack.total_return_pct, total=True))
+    monthly_rows.append(month_row("Recursos investidos", pack.invested_value_start,
+                                  pack.invested_value_end, pack.invested_return_pct))
+    seen = set()
+    for title, types in [("Ações", {"stock", "index"}), ("Fundos", {"fund"}),
+                         ("CDBs e caixa", {"fixed_income", "cash"}), ("Outros", None)]:
+        items = [m for m in sorted(pack.positions, key=lambda x: -x.value_end)
+                 if m.instrument_id not in seen and (types is None or ins.loc[m.instrument_id, "type"] in types)]
+        if items:
+            monthly_rows.append(dict(group=title))
+        for m in items:
+            seen.add(m.instrument_id)
+            monthly_rows.append(month_row(ins.loc[m.instrument_id, "display_name"],
+                                          m.value_start, m.value_end, m.return_pct))
+    monthly_rows.append(dict(group="Referências do mês"))
+    for label, value in [("CDI", pack.cdi_return_pct), ("IPCA", pack.ipca_return_pct)]:
+        row = month_row(label, 0, 0, value)
+        row.update(start="-", end="-")
+        monthly_rows.append(row)
+    mix_rows = []
+    for r in plan.get("class_mix", []):
+        gap = r["target_pct"] - r["before_pct"]
+        mix_rows.append(dict(label=r["label"], value=brmoney(r["before_brl"]),
+                             before=brpct(r["before_pct"]), target=brpct(r["target_pct"]),
+                             gap=(f"{gap:+.2f}".replace(".", ",") + " p.p.") if abs(gap) >= .005 else "-"))
+    pos_cols = []
     assets = {"logo": data_uri("xp_logo.png"), "logo_white": data_uri("xp_logo_white.png")}
     env = Environment(loader=FileSystemLoader(TPL), autoescape=select_autoescape(["html"]))
-    env.filters["safe_svg"] = lambda s: s
+    from letter_content import emphasised_html
+    env.filters["emphasis"] = emphasised_html
     tpl = env.get_template("letter.html")
     from markupsafe import Markup
     doc["fit"] = f"{fit:.3f}"
@@ -151,20 +161,19 @@ def build_html(fit: float = 1.0, show_annex: bool = True, macro_first: bool = Fa
                                  ("bold", "LiberationSans-Bold.ttf"))}
     return tpl.render(doc=doc, letter=letter, figures=figures, kpi_rows=kpi_rows,
                       fonts=fonts,
+                      rv_ceiling=brpct(allocation['rv_ceiling_pct']),
                       pos_cols=pos_cols, assets=assets, show_annex=show_annex, macro_first=macro_first,
                       trade_rows=trade_rows, plan_note=plan_note, allocation_note=allocation_note,
-                      charts={k: Markup(v) for k, v in charts.items()})
+                      monthly_rows=monthly_rows, mix_rows=mix_rows)
 
 
-# Declared fit budget, tried in order. Shrinking a little is invisible to the
-# reader; dropping the position annex is visible, so it comes last. Anything
-# that does not fit inside this budget is a failure, not something to squeeze.
+# Declared fit budget. Every table stays complete at every scale; content that
+# does not fit inside this budget is a failure, not something to truncate.
 FIT_STEPS = [
-    (1.000, True,  "layout cheio"),
-    (0.970, True,  "reduzido 3%"),
-    (0.940, True,  "reduzido 6%"),
-    (0.940, False, "reduzido 6%, sem o anexo de posições"),
-    (0.910, False, "reduzido 9%, sem o anexo de posições"),
+    (1.000, False, "layout cheio"),
+    (0.970, False, "reduzido 3%"),
+    (0.940, False, "reduzido 6%"),
+    (0.910, False, "reduzido 9%"),
 ]
 
 

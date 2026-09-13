@@ -195,22 +195,44 @@ under the alocacao_* keys; the model's own assumptions, in the firm's words:
 {alloc_block}
 Explain that this is a model target, not a mathematically optimal portfolio or a
 return promise. Compare cumulative real class estimates over the SAME forecast
-window, not annual estimates with cumulative estimates. GDP + assumed dividend
+window, not annual estimates with cumulative estimates. INTERNAL CONTEXT ONLY: GDP + assumed dividend
 yield estimates RV; Selic deflated by IPCA estimates RF. Year-end Selic is used
 as an annual proxy. Estimates exclude taxes and costs and are NOT forecasts for
 individual positions, funds or stocks. The RF grouping includes credit and
 multimarket funds with different risks.
+Do not print these formulas, their abbreviations or the term dividend yield.
+Write for a client with no investment training. Always spell out renda fixa and
+renda variável; never use RF or RV. Explain any other acronym on first use,
+including Selic (taxa básica de juros), IPCA (medida de inflação) and CDI
+(referência de juros para investimentos). Prefer crescimento da economia to PIB.
+Translate retorno real as ganho acima da inflação; explain technical concepts
+through their practical effect on the client's savings. Use client-facing product
+names, never internal identifiers, category codes, suitability or lookthrough.
 Suggest selling current RV positions and using an unspecified Ibovespa index
 fund for the target RV basket. Do not name an ETF ticker or individual stocks to
 buy. An index fund may occupy the entire RV basket and remains exposed to market
 risk. If the client prefers stock picking, each stock is limited to the authorised
 MAX_SINGLE_POSITION_PCT percentage OF THE RV BASKET. The same cap applies per RF
 PRODUCT OF THE RF BASKET, not per issuer or total wealth. Target cash is zero.
+Explain that an index fund diversifies exposure across companies and reduces
+single-company concentration, without eliminating market risk. Individual stocks
+remain an alternative chosen by the client, subject to both the per-stock cap
+and the overall RV ceiling for their risk profile and horizon.
 
 MACROECONOMIC CONTEXT (already summarised, do not add figures of your own).
 Use the authorised macro_* figures to make this section concrete rather than
 generic - state the projections instead of describing them in adjectives:
 {macro_summary or "(indisponivel)"}
+Give this section about 80 words. Outline the market trends described in the
+supplied case in everyday language, not current news outside the exercise.
+Explain why the projected high interest rates can make interest-linked renda fixa
+attractive, and how interest earned above inflation can increase purchasing power.
+Relate this to the model's expected gains above inflation and to the client's
+risk profile. Keep conditional language and the specified forecast period.
+Discuss lower risk only for appropriately selected products; never describe the
+entire renda fixa basket as risk-free or very low risk. Credit and multimarket
+funds have distinct risks. Do not imply every product earns Selic, has guaranteed
+returns, principal protection or insurance. Do not invent macro events or figures.
 
 CLIENT RISK PROFILE (verbatim source document):
 {profile_raw[:4000]}
@@ -220,7 +242,15 @@ Use exactly the keys and types below. Both highlights and recommendations MUST
 be arrays of strings, never a single string or an object. All other fields MUST
 be nonempty strings. Escape quotation marks and line breaks inside JSON strings.
 Replace the English placeholders with concise Brazilian Portuguese prose.
-The template supplies headings, tables and charts; do not include markdown.
+The template supplies headings and tables. Use **bold** around one important
+sentence or short clause per performance, macro and recommendation paragraph.
+Emphasis must highlight measured performance, future macro implications or
+adjustments consistent with the client's risk profile and supplied research.
+No other Markdown or HTML is allowed. Never emphasise entire paragraphs.
+Write the three highlights as connected sentences forming ONE flowing executive
+summary: first measured performance, then the future impact of market events,
+then adjustments aligned with the risk profile and the supplied research.
+Do not turn all three highlights into performance figures or compliance findings.
 
 {{
   "highlights": ["First takeaway.", "Second takeaway.", "Third takeaway."],
@@ -232,14 +262,14 @@ The template supplies headings, tables and charts; do not include markdown.
   "closing": "Offer to discuss the suggestions. Do not sign."
 }}
 
-Keep the whole letter near 280 words: highlights about 35, greeting 20,
-performance 65, macro 45, recommendations 90 in total, coverage 10 and closing 15.
+Keep the whole letter near 310 words: highlights about 40, greeting 20,
+performance 55, macro 80, recommendations 90 in total, coverage 10 and closing 15.
 In performance, do not blend CDI and IPCA. Ibovespa is market context only.
 Do not attribute outperformance to manager skill without evidence.
 
 The deterministic template already prints class targets, cumulative estimates,
 product caps and trade amounts. Explain their rationale without duplicating
-these numbers in prose. Total length across all fields: about 280 words. Keep it tight; the layout is
+these numbers in prose. Total length across all fields: about 310 words. Keep it tight; the layout is
 fixed at two pages and long prose breaks it."""
 
 ADVISOR = _c["advisor"]

@@ -603,7 +603,7 @@ if hist:
                         f'<span>{e["reason"]}</span></div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------- letter
-st.markdown('<p class="sectitle">Relatório do cliente</p>', unsafe_allow_html=True)
+st.markdown('<p class="sectitle">Carta do cliente</p>', unsafe_allow_html=True)
 
 with st.expander("Configura\u00e7\u00e3o do relat\u00f3rio"):
     st.markdown("#### Configuração")
@@ -639,7 +639,7 @@ if (pdf_p.exists() or html_p.exists()) and not current_letter:
     st.info("O relatório salvo é anterior aos dados/modelo atuais. Gere outro relatório para visualizar ou baixar.")
 a = st.columns([2, 1, 1])
 
-if a[0].button(f"Gerar relatório de {name.split()[0]}", type="primary",
+if a[0].button(f"Gerar carta de {name.split()[0]}", type="primary",
                width="stretch", disabled=not current_plan):
     if not key:
         st.error("Informe a chave da OpenAI na configuração do relatório.")

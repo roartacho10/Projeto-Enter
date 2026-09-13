@@ -7,6 +7,12 @@ Other structural errors are rejected and sent through the generation retry loop.
 from __future__ import annotations
 import json
 import re
+from markupsafe import Markup, escape
+
+
+def emphasised_html(text: str) -> Markup:
+    """Only paired **bold** is markup; all model-supplied HTML is escaped."""
+    return Markup(re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", str(escape(text))))
 
 TEXT_FIELDS = ("greeting", "performance", "macro", "coverage", "closing")
 PARAGRAPH_FIELDS = ("highlights", "recommendations")
@@ -48,4 +54,4 @@ def flatten_sections(sections: dict, advisor: str) -> str:
     parts = sections["highlights"] + [sections[k] for k in ("greeting", "performance", "macro")]
     parts += sections["recommendations"]
     parts += [sections["coverage"], sections["closing"], advisor]
-    return "\n\n".join(parts)
+    return re.sub(r"\*\*([^*]+)\*\*", r"\1", "\n\n".join(parts))

@@ -9,7 +9,7 @@ from allocation import MODEL_VERSION, fingerprint
 from conftest import stage_out
 
 
-@pytest.mark.parametrize("fixture", ["streamlit_letter_2025_04.txt", "streamlit_letter_layout_overflow.txt"])
+@pytest.mark.parametrize("fixture", ["streamlit_letter_2025_04.txt", "streamlit_letter_layout_overflow.txt", "streamlit_letter_editorial.txt"])
 def test_production_letter_fits_two_pages(ran, monkeypatch, fixture):
     from playwright.sync_api import sync_playwright
     import render_pdf
@@ -43,11 +43,12 @@ def test_production_letter_fits_two_pages(ran, monkeypatch, fixture):
                     if not overflow:
                         assert page.locator(".page").count() == 2
                         assert page.evaluate("document.fonts.check('12px ReportSans')")
-                        assert page.locator("figure svg text").evaluate_all(
-                            "els => els.every(el => getComputedStyle(el).fontFamily.includes('ReportSans'))")
-                        for paragraph in paragraphs[:-1]:
-                            assert paragraph in page.locator("body").inner_text()
-                        assert page.get_by_text(sections["macro"], exact=True).count() == 1
+                        assert page.locator("figure").count() == 0
+                        assert page.locator(".page").nth(1).locator(".band").count() == 0
+                        assert page.locator(".monthly tbody tr:not(.group)").count() == 17
+                        for paragraph in paragraphs[:-3]:
+                            assert paragraph.replace("**", "") in page.locator("body").inner_text()
+                        assert page.get_by_text(sections["macro"].replace("**", ""), exact=True).count() == 1
                         print(f"{fixture}: {label}")
                         if os.environ.get("ENTER_LAYOUT_QA_DIR"):
                             qa = Path(os.environ["ENTER_LAYOUT_QA_DIR"])

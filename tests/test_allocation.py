@@ -145,7 +145,7 @@ def test_streamlit_opens_on_the_entry_screen(ran):
     app = AppTest.from_file(str(ran / "app.py")).run(timeout=45)
     assert not app.exception, [e.message for e in app.exception]
     assert [b for b in app.button if b.label == "Acessar"], "sem botao de acesso"
-    assert not [b for b in app.button if b.label.startswith("Gerar relatório de")], \
+    assert not [b for b in app.button if b.label.startswith("Gerar carta de")], \
         "a mesa apareceu antes do acesso"
     assert not app.metric, "numeros do cliente visiveis antes do acesso"
     assert any(i.value == "Antonio Bicudo" for i in app.text_input), \
@@ -252,7 +252,7 @@ def test_streamlit_displays_the_new_targets_and_hides_old_reports(ran):
     for chave in ("target_rv_pct", "target_rf_pct", "target_cash_pct"):
         esperado = f"{target[chave]:.2f}".replace(".", ",") + "%"
         assert esperado in html, f"alvo {chave} ({esperado}) ausente da tela"
-    button = next(b for b in app.button if b.label.startswith("Gerar relatório de"))
+    button = next(b for b in app.button if b.label.startswith("Gerar carta de"))
     assert not button.disabled
 
 
@@ -332,7 +332,7 @@ def test_streamlit_can_open_legacy_results_and_request_refresh(ran, missing):
         app = _desk(ran)
         assert not app.exception, [e.message for e in app.exception]
         assert any("formato antigo" in i.value for i in app.info)
-        assert next(b for b in app.button if b.label.startswith("Gerar relatório de")).disabled
+        assert next(b for b in app.button if b.label.startswith("Gerar carta de")).disabled
     finally:
         path.write_bytes(original)
 
@@ -391,8 +391,10 @@ def test_renderer_rejects_legacy_letter_then_builds_matching_summary(ran, monkey
         paths[1].write_text(json.dumps({"approved": True, "model_version": MODEL_VERSION,
             "figures_fingerprint": fingerprint(figures), "allocation_fingerprint": target["fingerprint"]}), encoding="utf-8")
         html = render_pdf.build_html(show_annex=False)
-        assert "Alvo pelo modelo" in html and "Todas as posições atuais de RV" in html
-        assert "mín. 1 produtos" in html and "25% da cesta por produto" in html
+        assert "A distribuição sugerida" in html and "Ajustes sugeridos" in html
+        assert "FUND_RIZA_LOTUS" not in html and "Riza Lotus Plus Advisory" in html
+        assert "dividend yield" not in html
+        assert "Produtos" in html and "25% da cesta de renda variável por ação" in html
         assert "Executadas as operações acima" not in html
     finally:
         for p, data in previous.items():
