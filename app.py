@@ -248,7 +248,7 @@ def run(stages, client=None, key=None, model=None) -> tuple[str | None, str]:
     if model:
         env["MODEL_LETTER"] = model
     transcript = []
-    with st.status("Processando...", expanded=False) as status:
+    with st.status("Processando...", expanded=True) as status:
         for name, desc in stages:
             status.update(label=desc)
             r = subprocess.run([sys.executable, str(SRC / f"{name}.py")], cwd=ROOT,
@@ -259,6 +259,34 @@ def run(stages, client=None, key=None, model=None) -> tuple[str | None, str]:
                 return name, "\n".join(transcript)
         status.update(label="Concluído", state="complete")
     return None, "\n".join(transcript)
+
+
+def process_action(action: str, cid: str) -> None:
+    """Commit the action before the page rerenders; read freshly submitted widgets."""
+    if st.session_state.get("processing_action"):
+        return
+    st.session_state["processing_action"] = action
+    try:
+        kwargs = {}
+        if action == "letter":
+            api_key = ambient_key()[0] or st.session_state.get("key_sidebar", "").strip()
+            if not api_key:
+                st.session_state["action_feedback"] = ("error", "Informe a chave da OpenAI na configuração da carta.")
+                return
+            kwargs = {"key": api_key,
+                      "model": st.session_state.get("model_letter") or secret("MODEL_LETTER") or DEFAULT_MODEL}
+        failed, log = run(TRIAGE if action == "enter" else LETTER, cid, **kwargs)
+        st.session_state["log"] = log
+        if failed:
+            st.session_state["action_feedback"] = ("error", f"Não foi possível concluir a etapa {failed}. Veja os detalhes técnicos.")
+        else:
+            if action == "enter":
+                st.session_state["entrou"] = True
+            st.cache_data.clear()
+            st.session_state["action_feedback"] = (
+                "success", "Carteira carregada." if action == "enter" else "Carta gerada. Os arquivos estão disponíveis abaixo.")
+    finally:
+        st.session_state["processing_action"] = None
 
 
 def chip(n) -> str:
@@ -324,29 +352,27 @@ def band(sub: str = "") -> None:
 # same triage the desk's "Atualizar dados" runs, so the portfolio that opens
 # has been priced and re-checked in front of the user rather than served from
 # whatever a previous session happened to leave on disk.
+feedback = st.session_state.pop("action_feedback", None)
+if feedback:
+    getattr(st, feedback[0])(feedback[1])
+
 if not st.session_state.get("entrou"):
     band()
     # The card spans the same column as the brand strip above it, so the two
     # share one left and right edge. Boxed in a narrower centre column it read
     # as a widget dropped on the page rather than as the page itself.
-    with st.container(border=True):
+    with st.form("access_form", border=True):
         st.markdown("##### Acesso do assessor")
         f = st.columns([2, 1, 1], vertical_alignment="bottom")
         f[0].text_input("Assessor", value=str(_crow["advisor"]), key="entrada_assessor")
         f[1].text_input("Código", value=str(_crow["advisor_code"]), disabled=True,
                         key="entrada_codigo")
-        entrar = f[2].button("Acessar", type="primary", width="stretch")
-    if entrar:
-        failed, log = run(TRIAGE, ACTIVE)
-        st.session_state["log"] = log
-        if failed:
-            st.error(f"Não foi possível abrir a carteira: falhou em {failed}.")
-            with st.expander("Detalhes técnicos"):
-                st.code(log, language="text")
-        else:
-            st.session_state["entrou"] = True
-            st.cache_data.clear()
-            st.rerun()
+        f[2].form_submit_button("Acessar", type="primary", width="stretch",
+                                on_click=process_action, args=("enter", ACTIVE),
+                                disabled=bool(st.session_state.get("processing_action")))
+    if st.session_state.get("log"):
+        with st.expander("Detalhes técnicos"):
+            st.code(st.session_state["log"], language="text")
     st.stop()
 
 band(f'{_crow["advisor"]} · Código {_crow["advisor_code"]} · '
@@ -556,7 +582,8 @@ if pack:
         rows = "".join(
             "<tr>" + "".join(f"<td>{escape(str(value))}</td>" for value in (
                 verbo[t["action"]],
-                t["instrument_id"] or f"{t['category']} — {t['criteria']}",
+                names.get(t["instrument_id"], t["instrument_id"]) if t["instrument_id"]
+                else f"{t['category']} — {t['criteria']}",
                 brl(t["amount_brl"]), t.get("min_products") or "—")) + "</tr>"
             for t in plan["trades"])
         st.markdown('<table class="mtable adjustments"><thead><tr><th>Operação</th>'
@@ -622,7 +649,7 @@ with st.expander("Configura\u00e7\u00e3o do relat\u00f3rio"):
     st.caption(f"Modelo de redação: **{model}**")
     with st.expander("Trocar modelo"):
         opts = [model] + [m for m in MODELS if m != model]
-        model = st.selectbox("Modelo de redação", opts, index=0, label_visibility="collapsed")
+        model = st.selectbox("Modelo de redação", opts, index=0, label_visibility="collapsed", key="model_letter")
 
 
 pdf_p, html_p = OUT / cid / "letter.pdf", OUT / cid / "letter.html"
@@ -639,18 +666,9 @@ if (pdf_p.exists() or html_p.exists()) and not current_letter:
     st.info("O relatório salvo é anterior aos dados/modelo atuais. Gere outro relatório para visualizar ou baixar.")
 a = st.columns([2, 1, 1])
 
-if a[0].button(f"Gerar carta de {name.split()[0]}", type="primary",
-               width="stretch", disabled=not current_plan):
-    if not key:
-        st.error("Informe a chave da OpenAI na configuração do relatório.")
-    else:
-        failed, log = run(LETTER, cid, key=key, model=model)
-        st.session_state["log"] = log
-        if failed:
-            st.error("Não foi possível concluir. Veja os detalhes técnicos ao final.")
-        else:
-            st.cache_data.clear()
-            st.rerun()
+a[0].button(f"Gerar carta de {name.split()[0]}", type="primary", key="generate_letter",
+            width="stretch", disabled=not current_plan or bool(st.session_state.get("processing_action")),
+            on_click=process_action, args=("letter", cid))
 
 if current_letter and layout.get("pdf_ready") and pdf_p.exists():
     a[1].download_button("Baixar PDF", pdf_p.read_bytes(), f"relatorio_{cid.lower()}.pdf",
