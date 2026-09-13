@@ -261,47 +261,26 @@ def run(stages, client=None, key=None, model=None) -> tuple[str | None, str]:
     return None, "\n".join(transcript)
 
 
-def queue_action(action: str, cid: str) -> None:
-    """Callbacks only remember the click; never block the page while it is stale."""
-    if not st.session_state.get("pending_action") and not st.session_state.get("processing_action"):
-        st.session_state["pending_action"] = (action, cid)
-
-
-def process_pending(action: str, cid: str) -> None:
-    """Run below the already-rendered button, with the usual inline progress."""
-    if st.session_state.get("pending_action") != (action, cid):
-        return
-    st.session_state.pop("pending_action")
-    process_action(action, cid)
-    st.rerun()
-
-
 def process_action(action: str, cid: str) -> None:
     """Read the submitted widgets after rendering them, outside the callback."""
-    if st.session_state.get("processing_action"):
-        return
-    st.session_state["processing_action"] = action
-    try:
-        kwargs = {}
-        if action == "letter":
-            api_key = ambient_key()[0] or st.session_state.get("key_sidebar", "").strip()
-            if not api_key:
-                st.session_state["action_feedback"] = ("error", "Informe a chave da OpenAI na configuração da carta.")
-                return
-            kwargs = {"key": api_key,
-                      "model": st.session_state.get("model_letter") or secret("MODEL_LETTER") or DEFAULT_MODEL}
-        failed, log = run(TRIAGE if action == "enter" else LETTER, cid, **kwargs)
-        st.session_state["log"] = log
-        if failed:
-            st.session_state["action_feedback"] = ("error", f"Não foi possível concluir a etapa {failed}. Veja os detalhes técnicos.")
-        else:
-            if action == "enter":
-                st.session_state["entrou"] = True
-            st.cache_data.clear()
-            st.session_state["action_feedback"] = (
-                "success", "Carteira carregada." if action == "enter" else "Carta gerada. Os arquivos estão disponíveis abaixo.")
-    finally:
-        st.session_state["processing_action"] = None
+    kwargs = {}
+    if action == "letter":
+        api_key = ambient_key()[0] or st.session_state.get("key_sidebar", "").strip()
+        if not api_key:
+            st.session_state["action_feedback"] = ("error", "Informe a chave da OpenAI na configuração da carta.")
+            return
+        kwargs = {"key": api_key,
+                  "model": st.session_state.get("model_letter") or secret("MODEL_LETTER") or DEFAULT_MODEL}
+    failed, log = run(TRIAGE if action == "enter" else LETTER, cid, **kwargs)
+    st.session_state["log"] = log
+    if failed:
+        st.session_state["action_feedback"] = ("error", f"Não foi possível concluir a etapa {failed}. Veja os detalhes técnicos.")
+    else:
+        if action == "enter":
+            st.session_state["entrou"] = True
+        st.cache_data.clear()
+        st.session_state["action_feedback"] = (
+            "success", "Carteira carregada." if action == "enter" else "Carta gerada. Os arquivos estão disponíveis abaixo.")
 
 
 def chip(n) -> str:
@@ -367,6 +346,9 @@ def band(sub: str = "") -> None:
 # same triage the desk's "Atualizar dados" runs, so the portfolio that opens
 # has been priced and re-checked in front of the user rather than served from
 # whatever a previous session happened to leave on disk.
+# Retire flags left by the former callback queue, including interrupted sessions.
+st.session_state.pop("pending_action", None)
+st.session_state.pop("processing_action", None)
 feedback = st.session_state.pop("action_feedback", None)
 if feedback:
     getattr(st, feedback[0])(feedback[1])
@@ -382,10 +364,10 @@ if not st.session_state.get("entrou"):
         f[0].text_input("Assessor", value=str(_crow["advisor"]), key="entrada_assessor")
         f[1].text_input("Código", value=str(_crow["advisor_code"]), disabled=True,
                         key="entrada_codigo")
-        f[2].form_submit_button("Acessar", type="primary", width="stretch",
-                                on_click=queue_action, args=("enter", ACTIVE),
-                                disabled=bool(st.session_state.get("pending_action") or st.session_state.get("processing_action")))
-    process_pending("enter", ACTIVE)
+        enter_clicked = f[2].form_submit_button("Acessar", type="primary", width="stretch")
+    if enter_clicked:
+        process_action("enter", ACTIVE)
+        st.rerun()
     if st.session_state.get("log"):
         with st.expander("Detalhes técnicos"):
             st.code(st.session_state["log"], language="text")
@@ -682,10 +664,10 @@ if (pdf_p.exists() or html_p.exists()) and not current_letter:
     st.info("O relatório salvo é anterior aos dados/modelo atuais. Gere outro relatório para visualizar ou baixar.")
 a = st.columns([2, 1, 1])
 
-a[0].button(f"Gerar carta de {name.split()[0]}", type="primary", key="generate_letter",
-            width="stretch", disabled=not current_plan or bool(st.session_state.get("pending_action") or st.session_state.get("processing_action")),
-            on_click=queue_action, args=("letter", cid))
-process_pending("letter", cid)
+if a[0].button(f"Gerar carta de {name.split()[0]}", type="primary", key="generate_letter",
+               width="stretch", disabled=not current_plan):
+    process_action("letter", cid)
+    st.rerun()
 
 if current_letter and layout.get("pdf_ready") and pdf_p.exists():
     a[1].download_button("Baixar PDF", pdf_p.read_bytes(), f"relatorio_{cid.lower()}.pdf",

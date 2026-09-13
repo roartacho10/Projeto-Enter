@@ -44,7 +44,7 @@ def test_first_click_executes_once_and_rerender_never_repeats(ran, monkeypatch, 
         if action == "enter":
             assert app.session_state["entrou"]
             assert app.button(key="generate_letter")
-    assert not app.session_state["processing_action"]
+    assert "processing_action" not in app.session_state
     app.run(timeout=45)
     assert len(calls) == expected
 
@@ -59,3 +59,31 @@ def test_adjustments_use_the_same_display_names_as_month_table(ran):
     assert "Truxt Long Bias" in table
     assert "CDB Banco C6 (vencido)" in table
     assert "FUND_RIZA_LOTUS" not in table and "CDB_C6_SET2024" not in table
+
+
+def test_interrupted_loading_and_old_flags_cannot_lock_access(ran, monkeypatch):
+    import streamlit as st
+    app = AppTest.from_file(str(ran / "app.py"))
+    app.session_state["processing_action"] = "enter"
+    app.session_state["pending_action"] = ("enter", "ALBERT")
+    app.run(timeout=45)
+    access = next(b for b in app.button if b.label == "Acessar")
+    assert not access.disabled
+    assert "processing_action" not in app.session_state
+    assert "pending_action" not in app.session_state
+
+    calls = []
+    def interrupted_run(cmd, **kwargs):
+        calls.append(cmd)
+        st.rerun()  # A new UI rerun arrives while a stage is being processed.
+    monkeypatch.setattr(subprocess, "run", interrupted_run)
+    access.click().run(timeout=45)
+    assert not app.exception
+    assert len(calls) == 1
+    access = next(b for b in app.button if b.label == "Acessar")
+    assert not access.disabled
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: SimpleNamespace(returncode=0, stdout="ok", stderr=""))
+    access.click().run(timeout=45)
+    assert not app.exception
+    assert app.session_state["entrou"]
