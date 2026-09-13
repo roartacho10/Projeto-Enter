@@ -562,9 +562,6 @@ if pack and plan and plan.get("class_mix"):
             '<th>Limite</th><th>Depois do ajuste</th></tr></thead>'
             f'<tbody>{corpo}</tbody></table>', unsafe_allow_html=True)
 
-    for pendente in plan.get("pending_reviews", []):
-        st.warning("Revisão de categoria ainda necessária: " + pendente)
-
     if rec and rec["recommendations"]:
         with st.expander(f"Base de cada ponto de atenção ({len(rec['recommendations'])})"):
             for r in rec["recommendations"]:
