@@ -248,16 +248,17 @@ def run(stages, client=None, key=None, model=None) -> tuple[str | None, str]:
     if model:
         env["MODEL_LETTER"] = model
     transcript = []
-    with st.status("Processando...", expanded=False) as status:
+    with st.spinner("Processando... Aguarde."):
+        progress = st.empty()
         for name, desc in stages:
-            status.update(label=desc)
+            progress.caption(desc)
             r = subprocess.run([sys.executable, str(SRC / f"{name}.py")], cwd=ROOT,
                                capture_output=True, text=True, env=env)
             transcript.append(f"$ {name}.py\n{(r.stdout or '') + (r.stderr or '')}")
             if r.returncode != 0:
-                status.update(label=f"Interrompido em {desc.lower()}", state="error")
+                progress.empty()
                 return name, "\n".join(transcript)
-        status.update(label="Concluído", state="complete")
+        progress.empty()
     return None, "\n".join(transcript)
 
 
@@ -630,25 +631,31 @@ if hist:
 # ---------------------------------------------------------------- letter
 st.markdown('<p class="sectitle">Carta do cliente</p>', unsafe_allow_html=True)
 
-with st.expander("Configura\u00e7\u00e3o do relat\u00f3rio"):
-    st.markdown("#### Configuração")
-    key, key_src = ambient_key()
-    if key:
-        st.caption("OpenAI configurada. A chave salva é usada automaticamente em cada relatório.")
-    else:
-        key = st.text_input("Chave da OpenAI", type="password", placeholder="sk-...",
-                            key="key_sidebar",
-                            help="Para não precisar digitar de novo, configure "
-                                 "OPENAI_API_KEY no ambiente ou em .streamlit/secrets.toml.")
-        st.caption("Para salvar uma vez só, acrescente OPENAI_API_KEY nos Secrets do Streamlit, "
-                   "junto das configurações do Gmail. O campo acima é apenas para uso temporário.")
+with st.form("letter_form", border=False):
+    with st.expander("Configura\u00e7\u00e3o do relat\u00f3rio"):
+        st.markdown("#### Configuração")
+        key, key_src = ambient_key()
+        if key:
+            st.caption("OpenAI configurada. A chave salva é usada automaticamente em cada relatório.")
+        else:
+            key = st.text_input("Chave da OpenAI", type="password", placeholder="sk-...",
+                                key="key_sidebar",
+                                help="Para não precisar digitar de novo, configure "
+                                     "OPENAI_API_KEY no ambiente ou em .streamlit/secrets.toml.")
+            st.caption("Para salvar uma vez só, acrescente OPENAI_API_KEY nos Secrets do Streamlit, "
+                       "junto das configurações do Gmail. O campo acima é apenas para uso temporário.")
 
-    model = secret("MODEL_LETTER") or DEFAULT_MODEL
-    st.caption(f"Modelo de redação: **{model}**")
-    with st.expander("Trocar modelo"):
-        opts = [model] + [m for m in MODELS if m != model]
-        model = st.selectbox("Modelo de redação", opts, index=0, label_visibility="collapsed", key="model_letter")
+        model = secret("MODEL_LETTER") or DEFAULT_MODEL
+        st.caption(f"Modelo de redação: **{model}**")
+        with st.expander("Trocar modelo"):
+            opts = [model] + [m for m in MODELS if m != model]
+            model = st.selectbox("Modelo de redação", opts, index=0, label_visibility="collapsed", key="model_letter")
+    generate_clicked = st.form_submit_button(f"Gerar carta de {name.split()[0]}",
+        type="primary", key="generate_letter", width="stretch", disabled=not current_plan)
 
+if generate_clicked:
+    process_action("letter", cid)
+    st.rerun()
 
 pdf_p, html_p = OUT / cid / "letter.pdf", OUT / cid / "letter.html"
 generation = load(cid, "generation_log.json") or {}
@@ -660,19 +667,12 @@ current_letter = bool(current_plan and generation.get("approved")
                       and generation.get("figures_fingerprint") == fingerprint(current_figures)
                       and layout.get("generation_run_id") == generation.get("run_id")
                       and layout.get("html_ready"))
-if (pdf_p.exists() or html_p.exists()) and not current_letter:
-    st.info("O relatório salvo é anterior aos dados/modelo atuais. Gere outro relatório para visualizar ou baixar.")
-a = st.columns([2, 1, 1])
-
-if a[0].button(f"Gerar carta de {name.split()[0]}", type="primary", key="generate_letter",
-               width="stretch", disabled=not current_plan):
-    process_action("letter", cid)
-    st.rerun()
+a = st.columns(2)
 
 if current_letter and layout.get("pdf_ready") and pdf_p.exists():
-    a[1].download_button("Baixar PDF", pdf_p.read_bytes(), f"relatorio_{cid.lower()}.pdf",
+    a[0].download_button("Baixar PDF", pdf_p.read_bytes(), f"relatorio_{cid.lower()}.pdf",
                          "application/pdf", width="stretch")
-elif current_letter and html_p.exists() and a[1].button("Gerar PDF", width="stretch"):
+elif current_letter and html_p.exists() and a[0].button("Gerar PDF", width="stretch"):
     failed, log = run(RENDER, cid)
     st.session_state["log"] = log
     if failed:
@@ -682,7 +682,7 @@ elif current_letter and html_p.exists() and a[1].button("Gerar PDF", width="stre
     else:
         st.rerun()
 if current_letter and html_p.exists():
-    a[2].download_button("Baixar HTML", html_p.read_bytes(), f"relatorio_{cid.lower()}.html",
+    a[1].download_button("Baixar HTML", html_p.read_bytes(), f"relatorio_{cid.lower()}.html",
                          "text/html", width="stretch")
 
 if current_letter and html_p.exists():
