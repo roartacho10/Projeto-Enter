@@ -2,7 +2,7 @@
 One command runs the whole pipeline.
 
     python run.py                      # Albert, full run
-    python run.py --client CARLOS      # another client
+    python run.py --client ALBERT      # explicitly select the complete case
     python run.py --all                # every client in clients.csv
     python run.py --all --no-llm       # refresh metrics and rules only (the triage pass)
     python run.py --fetch              # re-download market data first (needs network)

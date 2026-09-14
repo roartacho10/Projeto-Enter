@@ -3,6 +3,20 @@
 A proof of concept that produces a client-ready monthly investment letter from
 public data, for a middle-market brokerage client.
 
+## Try the application
+
+[Open the Streamlit application](https://projeto-enter-wpiqdnwzhhxnxibr5nwmga.streamlit.app/).
+The demonstration uses Albert's portfolio for April 2025.
+
+1. Click **Acessar** to open the advisor interface.
+2. Review Albert's performance, profile, current allocation and suggested adjustments.
+3. In the client letter section, click **Gerar carta de Albert**.
+4. Once generation and verification finish, download the PDF or HTML.
+   Email delivery is optional and requires the [Gmail configuration](docs/email.md).
+
+The other clients are demonstration roster entries without positions; Albert is
+the complete case. The hosted app uses server-side credentials when configured.
+
 > **This is an independent case-study exercise.** It is not affiliated with,
 > endorsed by, or produced for XP Investimentos. The client, the advisor and
 > the portfolios are fictional; the letters it generates are demonstrations and
@@ -71,10 +85,11 @@ the suggested index migration, per-basket product limits and limitations.
 - Python 3.13 (tested on 3.13.14)
 - An OpenAI API key. The app looks for it in `.streamlit/secrets.toml` (see
   `.streamlit/secrets.toml.example`), then in the `OPENAI_API_KEY` environment
-  variable, and only asks in the sidebar if neither is set. On Streamlit
+  variable, and only asks in the expandable letter configuration if neither is set. On Streamlit
   Community Cloud, put it in Settings > Secrets. `MODEL_LETTER` sets the drafting
-  model the same way; it defaults to `gpt-4.1`. **Never commit a key** - both
-  locations are gitignored, and `check_repo.py` fails the build if one slips in.
+  model the same way; it defaults to `gpt-4.1`. **Never commit a key**.
+  `.env` and `.streamlit/secrets.toml` are gitignored; `python check_repo.py`
+  checks the deliverable files for common credential patterns.
 
 ```bash
 pip install -r requirements.txt
@@ -83,10 +98,15 @@ python -m playwright install chromium   # only needed for PDF output
 
 ## Running
 
+For the commands below, set `OPENAI_API_KEY` in the terminal environment before
+generating a letter. The command-line pipeline does not read Streamlit Secrets
+or automatically load `.env`. The `--no-llm` mode requires no API key.
+The Streamlit interface reads its own Secrets configuration as described above.
+
 ```bash
 python run.py                    # one client, full pipeline
-python run.py --client CARLOS    # another client
-python run.py --all              # every client in data/reference/clients.csv
+python run.py --client ALBERT    # explicitly select the complete case
+python run.py --all              # all registered clients with positions
 python run.py --all --no-llm     # triage only: metrics and rules, no model calls
 python run.py --fetch            # re-download market data first (needs network)
 ```
@@ -96,6 +116,18 @@ Or the advisor interface:
 ```bash
 streamlit run app.py
 ```
+
+## Submission files
+
+Keep the source, tests, templates, assets, documentation and versioned data.
+`data/reference/positions.csv` is the manually prepared authoritative portfolio;
+the case documents in `data/raw/inputs/` and the policy tables are also required.
+The small market-data extracts allow deterministic calculations without bulk CVM downloads.
+
+Generated outputs, local drafts, caches and credentials are excluded by `.gitignore`.
+For a ZIP submission, use GitHub's repository download instead of compressing the
+entire local working folder. A freshly generated client letter can be attached
+separately as an example of the output.
 
 ### Tests
 
