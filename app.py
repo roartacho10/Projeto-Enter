@@ -75,6 +75,7 @@ st.markdown("""
   .chip.none {background:#F0F0EE; color:#6B6B6B;}
   .sectitle {font-size:1.25rem; font-weight:700; margin:1.6rem 0 .4rem;
              padding-bottom:.35rem; border-bottom:1px solid #E4E4E2;}
+  .sectitle.minor {font-size:1rem; margin-top:1rem;}
   .finding {border-left:3px solid #FFC700; background:#FCFCFB; padding:.5rem .8rem;
             margin:.35rem 0; font-size:.88rem;}
   .finding b {display:block;}
@@ -556,7 +557,7 @@ if pack and plan and plan.get("class_mix"):
                       f'<td>{contra_limite(c["before_pct"], c["limit_pct"])}</td>'
                       f'<td>{pct(c["limit_pct"])}</td>'
                       f'<td>{contra_limite(c["after_pct"], c["limit_pct"])}</td></tr>')
-        st.markdown("**Concentração dentro de cada cesta**")
+        st.markdown('<p class="sectitle">Concentração dentro de cada cesta</p>', unsafe_allow_html=True)
         st.markdown(
             '<table class="mtable"><thead><tr><th>Medida</th><th>Hoje</th>'
             '<th>Limite</th><th>Depois do ajuste</th></tr></thead>'
@@ -573,7 +574,7 @@ if pack and plan and plan.get("class_mix"):
 
 if pack:
     if plan and plan["trades"]:
-        st.markdown("**Ajustes sugeridos**")
+        st.markdown('<p class="sectitle">Ajustes sugeridos</p>', unsafe_allow_html=True)
         verbo = {"sell": "Vender", "redeem": "Resgatar", "buy": "Aplicar"}
         rows = "".join(
             "<tr>" + "".join(f"<td>{escape(str(value))}</td>" for value in (
@@ -589,6 +590,18 @@ if pack:
                    + ("Alvos e limites por produto conferidos na simulação. " if plan["resolved"]
                       else "A simulação ainda apresenta pendências. ")
                    + f"Caixa após: {brl(plan['cash_after_brl'])}.")
+        if (any(t.get("rule_id") == "INDEX_MIGRATION" and t["action"] == "sell"
+                for t in plan["trades"])
+                and any(t["action"] == "buy" and t.get("category") == "Fundo de índice Ibovespa"
+                        for t in plan["trades"])):
+            st.caption(
+                "A migração para um fundo de índice Ibovespa é apenas uma recomendação para manter "
+                "a exposição à renda variável com menor concentração em empresas individuais e menor "
+                "dependência de acertar a escolha e a avaliação do preço de cada ação. "
+                "Isso não elimina o risco de mercado. A alocação final é uma escolha do cliente. "
+                "Se preferir uma carteira de ações individuais, observe o limite de concentração "
+                "de 25% da parcela de renda variável por ação e o limite total de renda variável "
+                "previsto para seu perfil e horizonte.")
 # ---------------------------------------------------------------- history
 hist = load(cid, "history.json")
 if hist:
@@ -630,7 +643,7 @@ st.markdown('<p class="sectitle">Carta do cliente</p>', unsafe_allow_html=True)
 
 with st.form("letter_form", border=False):
     with st.expander("Configura\u00e7\u00e3o do relat\u00f3rio"):
-        st.markdown("#### Configuração")
+        st.markdown('<p class="sectitle minor">Configuração</p>', unsafe_allow_html=True)
         key, key_src = ambient_key()
         if key:
             st.caption("OpenAI configurada. A chave salva é usada automaticamente em cada relatório.")
@@ -723,7 +736,7 @@ with st.expander("Detalhes técnicos"):
     st.caption("O registro completo da execução fica disponível para auditoria, "
                "mas fora do caminho de quem só quer o relatório.")
     if pack and pack.get("issues"):
-        st.markdown("**Qualidade de dados**")
+        st.markdown('<p class="sectitle minor">Qualidade de dados</p>', unsafe_allow_html=True)
         for i in pack["issues"]:
             st.write(f"`{i['severity']}` **{i['code']}** — {i['message']}")
     if st.session_state.get("log"):
