@@ -59,9 +59,9 @@ def add(rid, action, observed, threshold, extra="", iid=None, amount=None, obs_p
 equity_value = sum(
     m.value_end for m in pack.positions
     if riskcat.loc[instruments.loc[m.instrument_id, "risk_category"], "is_equity_exposure"] == "1")
-equity_pct = equity_value / invested * 100
+equity_pct = equity_value / pack.total_value_end * 100
 direct_pct = sum(m.value_end for m in pack.positions
-                 if instruments.loc[m.instrument_id, "risk_category"] == "equity_direct") / invested * 100
+                 if instruments.loc[m.instrument_id, "risk_category"] == "equity_direct") / pack.total_value_end * 100
 
 # --- 1. idle cash
 lim = float(rule("MAX_IDLE_CASH_PCT")["threshold"])
@@ -88,7 +88,7 @@ for iid, ins in instruments.iterrows():
 lim = float(rule("MAX_EQUITY_LOOKTHROUGH_PCT")["threshold"])
 if equity_pct > lim:
     add("MAX_EQUITY_LOOKTHROUGH_PCT", "reduce",
-        f"{equity_pct:.1f}% do investido em risco de renda variavel "
+        f"{equity_pct:.1f}% do patrimonio total em risco de renda variavel "
         f"({direct_pct:.1f}% em acoes diretas + fundos de acoes e long biased)",
         f"maximo {lim:.1f}%",
         "O extrato reporta apenas a linha de acoes; a exposicao efetiva e maior porque "
@@ -150,7 +150,7 @@ rs = RecommendationSet(
 (OUT / "recommendations.json").write_text(rs.model_dump_json(indent=2), encoding="utf-8")
 
 print(f"Perfil: {PROFILE}   |   {len(recs)} recomendacoes geradas\n")
-print(f"Exposicao a renda variavel (look-through): {rs.equity_lookthrough_pct:.1f}% do investido")
+print(f"Exposicao a renda variavel (look-through): {rs.equity_lookthrough_pct:.1f}% do patrimonio total")
 print(f"  dos quais em acoes diretas:             {rs.equity_reported_pct:.1f}%")
 print(f"Capital ocioso (caixa + vencido):         R$ {rs.idle_capital_brl:,.2f} "
       f"({rs.idle_capital_pct:.1f}% do patrimonio)\n")

@@ -77,7 +77,7 @@ COMPLIANT = (r"dentro d\w+ limites?|em conformidade|aderente ao mandato|"
              r"adequad\w+ ao (?:seu )?perfil|sem pontos de atenção|nenhum ajuste necessário")
 
 # --- F: a percentage written in the Brazilian form, with its sign if present
-PCT = re.compile(r"([+-]?\d{1,3}(?:\.\d{3})*,\d+)\s*(?:%|p\.p\.)")
+PCT = re.compile(r"(?<![\w.,+\-−])([+\-−]?\d+(?:\.\d{3})*(?:,\d+)?)\s*(?:%|p\.p\.)")
 
 # Portfolio-level subjects, so a direction claim about the whole portfolio is
 # checked too - that is where most of the prose actually lives.
@@ -267,7 +267,7 @@ def check(text: str) -> tuple[list[tuple[str, str, str]], dict]:
             owner = before[-1]
             if owner not in owned:
                 continue
-            bare = canonical_number(fm.group(1).lstrip("+-"))
+            bare = canonical_number(fm.group(1).lstrip("+-−"))
             if bare in owned[owner] or bare in portfolio_figs:
                 checked += 1
                 continue

@@ -41,7 +41,8 @@ PLACEHOLDERS = ["xxx", "lorem ipsum", "nome do cliente", "seu nome aqui"]
 BRACKETED = re.compile(r"\[[^\]\n]{1,60}\]")
 
 # A digit glued to letters is part of a ticker (HAPV3, AZZA3), not a claim.
-NUM = re.compile(r"(?<![\w/.,])\d{1,3}(?:\.\d{3})*(?:,\d+)?(?![\w/])")
+NUMBER = r"[+\-−]?\d+(?:\.\d{3})*(?:,\d+)?"
+NUM = re.compile(r"(?<![\w/.,+\-−])" + NUMBER + r"(?![\w/]|[.,]\d)")
 DATEISH = re.compile(r"\d{1,2}/\d{1,2}/\d{2,4}|\b(?:19|20)\d{2}\b")
 
 
@@ -64,15 +65,14 @@ def allowed_strings() -> set[str]:
 
 def exact_number(token: str) -> Decimal:
     """Ignore grouping and trailing zeros, never round or use a tolerance."""
-    return Decimal(token.replace(".", "").replace(",", "."))
+    return Decimal(token.replace("−", "-").replace(".", "").replace(",", "."))
 
 
 def verify(text: str) -> list[tuple[str, str, str]]:
     """Returns a list of (severity, code, message)."""
     issues: list[tuple[str, str, str]] = []
     allowed = allowed_strings()
-    allowed_values = {exact_number(value) for value in allowed if re.fullmatch(
-        r"\d{1,3}(?:\.\d{3})*(?:,\d+)?", value)}
+    allowed_values = {exact_number(value) for value in allowed if re.fullmatch(NUMBER, value)}
     masked = DATEISH.sub(" ", text)          # dates and years are not claims
 
     for token in NUM.findall(masked):

@@ -93,7 +93,7 @@ rules = [
 
     {"rule_id": "MAX_EQUITY_LOOKTHROUGH_PCT", "rule_type": "equity_lookthrough",
      "threshold": cell["max_equity_pct"], "severity": "warning",
-     "rationale": (f"Teto de renda variavel para o par {RISK} x horizonte {HORIZON.lower()} "
+     "rationale": (f"Teto de renda variavel sobre o patrimonio total, incluindo caixa, para o par {RISK} x horizonte {HORIZON.lower()} "
                    f"({years} anos). A classificacao fixa o teto; o horizonte modula dentro "
                    f"dele, porque prazo maior significa nao ser forcado a vender numa queda."),
      "policy_source": MATRIX, "source_type": "equivalencia"},

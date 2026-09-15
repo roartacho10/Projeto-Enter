@@ -1,5 +1,11 @@
 # Macro-driven allocation
 
+The equity ceiling and current equity exposure use closing total wealth,
+including cash. Being above the macro target is distinct from exceeding the
+profile/horizon ceiling. Product caps still use each asset basket as their base.
+See [the Brave reconciliation](brave-reconciliation.md) for the source audit and
+closing-value validation.
+
 This case model proposes a class allocation, not a statistically optimal
 portfolio or an individual-security return forecast. All operations are
 suggestions for discussion with the client. No orders are executed.

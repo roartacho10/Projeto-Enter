@@ -216,7 +216,7 @@ for _, g in golden.iterrows():
         fail += 1
         continue
     diff = abs(m.iloc[0]["price"] - float(g["quota"])) / float(g["quota"])
-    if diff > 1e-4:
+    if diff > 1e-8:
         log("blocker", "golden_mismatch",
             f"{g['instrument_id']} {g['date']}: got {m.iloc[0]['price']:.8f}, expected {g['quota']}",
             g["instrument_id"])

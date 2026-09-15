@@ -1,0 +1,3 @@
+date,cnpj,class,net_asset_value,quota_count,reported_return_pct,source_nav,source_count,source_return
+2025-03-31,35726300000137,Subclasse Senior Serie 1,1114582178.73,634508766.93000000,1.08,inf_mensal_fidc_tab_IV_202503.csv,inf_mensal_fidc_tab_X_2_202503.csv,inf_mensal_fidc_tab_X_3_202503.csv
+2025-04-30,35726300000137,Subclasse Senior Serie 1,1104714760.69,621485524.21000000,1.19,inf_mensal_fidc_tab_IV_202504.csv,inf_mensal_fidc_tab_X_2_202504.csv,inf_mensal_fidc_tab_X_3_202504.csv

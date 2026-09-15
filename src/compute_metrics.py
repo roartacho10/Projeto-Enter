@@ -165,7 +165,11 @@ pack = MetricsPack(
     ibov_return_pct=round(ibov_ret, 4),
     coverage_pct=round(marked_value / i0 * 100, 2), issues=issues)
 
-(OUT / "metrics_pack.json").write_text(pack.model_dump_json(indent=2), encoding="utf-8")
+blockers = [issue for issue in issues if issue.severity == "blocker"]
+if blockers:
+    for issue in blockers:
+        print(f"FALHOU: {issue.code}: {issue.message}")
+    sys.exit(1)
 
 # ---------------------------------------------------------------- validate
 # The golden file is Albert's hand-checked answer key. Other clients have no
@@ -175,6 +179,7 @@ pack = MetricsPack(
 # numbers, so it is named after that month and looked up by it.
 golden_path = REF / f"golden_portfolio_{PERIOD}.csv"
 if not golden_path.exists():
+    (OUT / "metrics_pack.json").write_text(pack.model_dump_json(indent=2), encoding="utf-8")
     print(f"\n(sem gabarito para {CLIENT} em {PERIOD} "
           f"[{golden_path.name}]: validacao numerica nao executada)")
     print(f"metrics_pack.json -> {OUT / 'metrics_pack.json'}")
@@ -191,11 +196,23 @@ for _, g in golden.iterrows():
     if gid.startswith("__"): continue
     m = next((x for x in metrics if x.instrument_id == gid), None)
     if gid == "FUNDS_BUCKET":
-        got0 = sum(x.value_start for x in metrics if instruments.loc[x.instrument_id, "type"] == "fund")
-        chk(f"FUNDS_BUCKET valor {br_date(START)}", got0, float(g["value_start"]), 0.05); continue
-    if m is None: continue
+        funds = [x for x in metrics if instruments.loc[x.instrument_id, "type"] == "fund"]
+        got0 = sum(x.value_start for x in funds)
+        got1 = sum(x.value_end for x in funds)
+        chk("FUNDS_BUCKET valor inicial", got0, float(g["value_start"]), 0.05)
+        chk("FUNDS_BUCKET valor final", got1, float(g["value_end"]), 0.05)
+        chk("FUNDS_BUCKET retorno", (got1 / got0 - 1) * 100, float(g["return_pct"]), 0.02)
+        chk("FUNDS_BUCKET contribuicao", sum(x.contribution_pp for x in funds), float(g["contribution_pp"]), 0.002)
+        continue
+    if m is None:
+        fails += 1
+        print(f"ERRO: posicao do gabarito ausente: {gid}")
+        continue
     chk(f"{gid} valor {br_date(START)}", m.value_start, float(g["value_start"]), 0.05)
+    chk(f"{gid} valor {br_date(END)}", m.value_end, float(g["value_end"]), 0.05)
     chk(f"{gid} retorno", m.return_pct, float(g["return_pct"]), 0.02)
+    if pd.notna(g["contribution_pp"]):
+        chk(f"{gid} contribuicao", m.contribution_pp, float(g["contribution_pp"]), 0.002)
 # The totals were typed into this file AND present in the answer key, so an
 # updated key would have been silently ignored here. They are read from it.
 _g = golden.set_index("id")
@@ -206,6 +223,11 @@ def gold(row: str, col: str):
 
 
 for _row, _col, _label, _got, _tol in (
+        ("__TOTAL_PATRIMONIO__", "value_end", "PATRIMONIO final", pack.total_value_end, 0.05),
+        ("__TOTAL_INVESTIDO__", "value_start", "INVESTIDO inicial", pack.invested_value_start, 0.05),
+        ("__TOTAL_INVESTIDO__", "value_end", "INVESTIDO final", pack.invested_value_end, 0.05),
+        ("__TOTAL_PATRIMONIO__", "contribution_pp", "PATRIMONIO contribuicao",
+         sum(m.contribution_pp for m in metrics), 0.005),
         ("__TOTAL_PATRIMONIO__", "value_start", f"PATRIMONIO {br_date(START)}",
          pack.total_value_start, 0.05),
         ("__TOTAL_PATRIMONIO__", "return_pct", "PATRIMONIO retorno",
@@ -245,3 +267,6 @@ for label, got, exp, ok in checks:
     print(f"  {'OK ' if ok else 'ERRO'} {label:30} obtido={got:>14,.2f}  esperado={exp:>14,.2f}")
 print(f"\nmetrics_pack.json -> {OUT / 'metrics_pack.json'}")
 print("VALIDACAO OK" if fails == 0 else f"VALIDACAO FALHOU: {fails} divergencias")
+if fails:
+    sys.exit(1)
+(OUT / "metrics_pack.json").write_text(pack.model_dump_json(indent=2), encoding="utf-8")

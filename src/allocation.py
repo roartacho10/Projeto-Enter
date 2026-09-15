@@ -9,7 +9,7 @@ import hashlib
 import json
 import math
 
-MODEL_VERSION = "macro-allocation-v1"
+MODEL_VERSION = "macro-allocation-v2-total-wealth"
 
 
 def fingerprint(value) -> str:

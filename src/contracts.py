@@ -224,9 +224,8 @@ class RebalancePlan(BaseModel):
     post_positions: list[dict] = Field(default_factory=list)
     # Where the book stands against where the model puts it, by class and by
     # concentration. Every percentage here is a share of the SAME base - the
-    # closing patrimony - because the readings these replace were not: the
-    # equity rule measures against the invested balance while the class target
-    # is applied to total wealth, and the two sat side by side on screen.
+    # closing patrimony. The equity ceiling uses this same base, including cash.
+    # Product concentration percentages are measured within their own baskets.
     class_mix: list[dict] = Field(default_factory=list)
     concentration: list[dict] = Field(default_factory=list)
     pending_reviews: list[str] = Field(default_factory=list)
